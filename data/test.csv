@@ -1,0 +1,4347 @@
+output,prompt
+"import Field from '../Field';
+import React from 'react';
+import { FormInput } from 'elemental';
+
+/*
+	TODO:
+	- gravatar
+	- validate email address
+ */
+
+module.exports = Field.create({
+	displayName: 'EmailField',
+	renderField () {
+		return (
+			<FormInput
+				name={this.props.path}
+				ref=""focusTarget""
+				value={this.props.value}
+				onChange={this.valueChanged}
+				autoComplete=""off""
+				type=""email""
+			/>
+		);
+	},
+	renderValue () {
+		return this.props.value ? (
+			<FormInput noedit href={'mailto:' + this.props.value}>{this.props.value}</FormInput>
+		) : (
+			<FormInput noedit>(not set)</FormInput>
+		);
+	},
+});
+","Generate the code for an email input field component that uses Elemental's `FormInput` component and has both a renderField and renderValue method. The renderField method should have an input type of email and the renderValue method should return either an email address if one is provided or the text ""(not set)""."
+"import React from 'react'
+import {route, withRouterHOC} from '@sanity/base/router'
+
+export default {
+  router: route('/:type/:id'),
+  canHandleIntent(intentName, params) {
+    return (intentName === 'edit' && params.id) || (intentName === 'create' && params.type)
+  },
+  getIntentState(intentName, params) {
+    return {
+      type: params.type || '*',
+      id: params.id,
+    }
+  },
+  title: 'Test intent',
+  name: 'test-intent',
+  component: withRouterHOC((props) => (
+    <div style={{padding: 10}}>
+      <h2>Test intent precedence</h2>
+      If you click an intent link (e.g. from search results) while this tool is open, it should be
+      opened here.
+      <pre>{JSON.stringify(props.router.state, null, 2)}</pre>
+    </div>
+  )),
+}
+",Describe the purpose of the code snippet and what it ultimately accomplishes.
+"/**
+ * @flow
+ */
+'use strict';
+
+import React from 'react';
+import {
+    ToastAndroid,
+    View,
+} from 'react-native';
+import DialogAndroid from 'react-native-dialogs';
+
+import FloatingActionButton from './FloatingActionButton';
+import StatelessComponent from './StatelessComponent';
+import store from './store';
+import * as t from './types';
+
+type CreateButtonsProps = {
+}
+export default class CreateButtons extends StatelessComponent<CreateButtonsProps> {
+    shouldComponentUpdate() {
+        return false;
+    }
+
+    handleCreateLambda() {
+        const dialog = new DialogAndroid();
+        dialog.set({
+            title: 'Choose a variable name',
+            positiveText: 'OK',
+            negativeText: 'Cancel',
+            input: {
+                allowEmptyInput: false,
+                callback: (varName) => {
+                    const error = checkDefNameErrors(varName);
+                    if (error != null) {
+                        ToastAndroid.show(error, ToastAndroid.SHORT);
+                    } else {
+                        store.dispatch(t.AddExpression.make(
+                            t.CanvasExpression.make(
+                                t.UserLambda.make(varName, null),
+                                t.CanvasPoint.make(100, 100))
+                        ));
+                    }
+                },
+            }
+        });
+        dialog.show();
+    }
+
+    handleCreateDefinition() {
+        const dialog = new DialogAndroid();
+        dialog.set({
+            title: 'Create or show definition',
+            positiveText: 'OK',
+            negativeText: 'Cancel',
+            input: {
+                allowEmptyInput: false,
+                type: 0x00001000, // InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+                callback: (defName) => {
+                    const error = checkDefNameErrors(defName);
+                    if (error != null) {
+                        ToastAndroid.show(error, ToastAndroid.SHORT)
+                    } else {
+                        store.dispatch(t.PlaceDefinition.make(
+                            defName,
+                            t.ScreenPoint.make(100, 100),
+                        ));
+                    }
+                },
+            }
+        });
+        dialog.show();
+    }
+
+    render() {
+        return <View
+            style={{
+                flexDirection: 'row',
+                position: 'absolute',
+                right: 0,
+                bottom: 0,
+            }}
+        >
+            <FloatingActionButton
+                onPress={this.handleCreateLambda.bind(this)}
+                source={require('./img/lambda.png')}
+                style={{
+                    marginRight: 24,
+                    marginBottom: 24,
+                }}
+            />
+            <FloatingActionButton
+                onPress={this.handleCreateDefinition.bind(this)}
+                source={require('./img/definition.png')}
+                style={{
+                    marginRight: 24,
+                    marginBottom: 24,
+                }}
+            />
+        </View>;
+    }
+};
+
+const isLowerCase = (letter: string): boolean => {
+    return letter !== letter.toUpperCase();
+};
+
+/**
+ * Returns an error message if the variable name is invalid, or null if the name
+ * is valid.
+ */
+const checkVarNameErrors = (varName: string): ?string => {
+    if (varName.length > 8) {
+        return 'Variable names can only be up to 8 letters long.';
+    }
+    for (let i = 0; i < varName.length; i++) {
+        if (!isLowerCase(varName[i])) {
+            return 'Variable names can only contain lower-case letters.';
+        }
+    }
+    return null;
+};
+
+/**
+ * Returns an error message if the definition name is invalid, or null if the
+ * name is valid.
+ */
+const checkDefNameErrors = (defName: string): ?string => {
+    if (defName.length > 8) {
+        return 'Definition names can only be up to 8 letters long.';
+    }
+    for (let i = 0; i < defName.length; i++) {
+        if (isLowerCase(defName[i])) {
+            return 'Definition names can only contain capital letters and symbols.';
+        }
+    }
+    return null;
+};","Create a React component that displays two floating action buttons in the bottom right corner of the screen. The first button, when pressed, should prompt the user to input a variable name less than 8 characters long, containing only lowercase letters. If the input is valid, a ""Lambda"" expression should be added to the store. The second button, when pressed, should prompt the user to input a definition name less than 8 characters long, containing only uppercase letters and symbols. If the input is valid, a ""Definition"" should be added to the store."
+"import React from 'react'
+import { connect } from 'react-redux'
+
+export default connect(
+  state => ({
+    status: state.status,
+  }),
+)(({ status }) =>
+  <div style={styles.container}>
+    <svg style={styles.svg}>
+      {renderTests(status.tests)}
+    </svg>
+  </div>
+)
+
+const PADDING = 20
+const TEST_PADDING = 30
+const SNAPSHOT_PADDING = 5
+const SNAPSHOT_SIZE = 16
+
+function renderTests(tests) {
+  let x = PADDING
+
+  return tests.map(test => {
+    const startX = x
+
+    if (test.snapshots != null) {
+      const snapshots = test.snapshots.map(snapshot => {
+        const thisX = x
+        x += SNAPSHOT_SIZE + SNAPSHOT_PADDING
+
+        return renderSnapshotOrTest(snapshot, test, thisX)
+      })
+
+      return [
+        <rect x={startX} width={x - startX} y={0} height={SNAPSHOT_SIZE + PADDING + PADDING} fill=""whitesmoke"" />,
+        ...snapshots,
+        <line
+          x1={x + SNAPSHOT_SIZE + (TEST_PADDING / 2)}
+          x2={x + SNAPSHOT_SIZE + (TEST_PADDING / 2)}
+          y1={PADDING} y2={PADDING + SNAPSHOT_SIZE} stroke=""gray"" strokeWidth={1}
+        />,
+      ]
+    }
+
+    const thisX = x
+    x += SNAPSHOT_SIZE + TEST_PADDING
+
+    return [
+      renderSnapshotOrTest(test, null, thisX),
+      <line
+        x1={thisX + SNAPSHOT_SIZE + (TEST_PADDING / 2)}
+        x2={thisX + SNAPSHOT_SIZE + (TEST_PADDING / 2)}
+        y1={PADDING} y2={PADDING + SNAPSHOT_SIZE} stroke=""gray"" strokeWidth={1}
+      />,
+    ]
+  })
+}
+
+function renderSnapshotOrTest(testOrSnapshot, parentTest, x) {
+  let snapshotStatusStyle = null
+
+  if (testOrSnapshot.passed) {
+    snapshotStatusStyle = styles.snapshotPassed
+  } else if (testOrSnapshot.passed === false) {
+    snapshotStatusStyle = styles.snapshotFailed
+  }
+
+  return (
+    <rect
+      style={{
+        ...styles.snapshot,
+        ...snapshotStatusStyle,
+      }}
+      x={x}
+      y={PADDING}
+    >
+      <title>
+        {parentTest != null
+          ? `${parentTest.name} - ${testOrSnapshot.name}`
+          : testOrSnapshot.name
+        }
+      </title>
+    </rect>
+  )
+}
+
+const styles = {
+  container: {
+    width: '100%',
+  },
+  svg: {
+    width: '100%',
+    height: 300,
+  },
+  snapshot: {
+    fill: 'gray',
+    width: SNAPSHOT_SIZE,
+    height: SNAPSHOT_SIZE,
+  },
+  snapshotPassed: {
+    fill: 'green',
+  },
+  snapshotFailed: {
+    fill: 'red',
+  },
+}
+","Generate the React component to render a visual representation of tests and their status as an SVG using the provided state data. The component should have a container div and an SVG element. The SVG should contain rectangles representing each test and snapshot, with lines connecting them. The rectangles should be colored differently based on the test status (passed/failed)."
+"
+import React, { Component } from 'react';
+import { Container,List, Header, Title, Content, Button, Icon, IconNB, Card, CardItem, Text, Left, Right, Body, ListItem } from 'native-base';
+import { View } from 'react-native'
+
+import styles from '../../styles/socialBox';
+
+import contacts from '../../../../mock/contacts'
+
+import realm from '../../db_ini'
+
+const _getContact = (contactId) => {
+
+  const contacts = realm.objects('User')
+  const searchResult = contacts.filtered(`userId = ""${contactId}""`)
+  const recent_contact = searchResult[0]
+  return recent_contact
+
+}
+
+const _getMatchingData = (arr1,arr2) => {
+  arr1.prototype.diff = function(arr2) {
+      var ret = [];
+      for(var i in this) {
+          if(arr2.indexOf( this[i] ) > -1){
+              ret.push( this[i] );
+          }
+      }
+      return ret;
+  };
+}
+
+const renderData = (contactId) => {
+  const datas = contacts
+  const contact = _getContact(contactId)
+  return (
+      <View>
+      <List
+          dataArray={contact.publicSharedData[0].hashTagData} renderRow={data =>
+            <ListItem style={{backgroundColor:'white'}}>
+              <Text>{data.tagDescription}</Text>
+              <Right>
+                <Text>{data.tagText}</Text>
+              </Right>
+            </ListItem>
+        }
+        />
+      </View>
+      )
+}
+
+const ConnectDetailTagBox = (props) => {
+  const datas = contacts
+  const {children} = props
+    return (
+      <View>
+        {renderData(children)}
+      </View>
+    )
+}
+
+export default ConnectDetailTagBox
+",Provide an example of a React Native function named `ConnectDetailTagBox` that dynamically displays a list of tags based on the contact's ID. Each tag should be formatted as a list item with a description on the left and text on the right. The data for the tags should come from a list of predefined contacts and the user's personal data.
+"import React from 'react';
+import { Field, reduxForm } from 'redux-form';
+import { Link } from 'react-router-dom';
+import { connect } from 'react-redux';
+import { createPost } from '../actions';
+
+class PostsNew extends React.Component {
+  renderField(field) {
+    const className = `form-group ${field.meta.touched && field.meta.error ? 'has-danger' : ''}`
+
+    return (
+      <div className={className}>
+        <label>{field.label}</label>
+        <input
+          className='form-control'
+          type='text'
+          {...field.input}
+        />
+        <div className='text-help'>
+          {field.meta.touched ? field.meta.error : ''}
+        </div>
+      </div>
+    );
+  }
+
+  onSubmit(values) {
+    this.props.createPost(values, () => {
+      this.props.history.push('/');
+    });
+  }
+
+  render() {
+    const { handleSubmit } = this.props;
+
+    return (
+      <form onSubmit={handleSubmit(this.onSubmit.bind(this))} className='posts-new'>
+        <Field
+          label='Title'
+          name='title'
+          component={this.renderField}
+        />
+        <Field
+          label='Categories'
+          name='categories'
+          component={this.renderField}
+        />
+        <Field
+          label='Post Content'
+          name='content'
+          component={this.renderField}
+        />
+        <button type='submit' className='btn btn-primary'>Submit</button>
+        <Link to='/' className='btn btn-danger'>Cancel</Link>
+      </form>
+    );
+  }
+}
+
+function validate(values) {
+  const errors = {};
+
+  if (!values.title) {
+    errors.title = ""Enter a title"";
+  }
+
+  if (!values.categories) {
+    errors.categories = ""Enter categories"";
+  }
+
+  if (!values.content) {
+    errors.content = ""Enter content"";
+  }
+
+  return errors;
+}
+
+export default reduxForm({
+  validate: validate,
+  form: 'PostsNewForm'
+})(
+  connect(null, { createPost })(PostsNew)
+);
+","Create a React component for creating a new post including title, categories, and content, with form validation for each field."
+"import React from 'react'
+import warning from 'warning'
+import invariant from 'invariant'
+import { createRouteFromReactElement } from './RouteUtils'
+import { component, components } from './PropTypes'
+
+const { string, bool, func } = React.PropTypes
+
+/**
+ * A <Route> is used to declare which components are rendered to the page when
+ * the URL matches a given pattern.
+ *
+ * Routes are arranged in a nested tree structure. When a new URL is requested,
+ * the tree is searched depth-first to find a route whose path matches the URL.
+ * When one is found, all routes in the tree that lead to it are considered
+ * ""active"" and their components are rendered into the DOM, nested in the same
+ * order as they are in the tree.
+ */
+const Route = React.createClass({
+
+  statics: {
+
+    createRouteFromReactElement(element) {
+      const route = createRouteFromReactElement(element)
+
+      if (route.handler) {
+        warning(
+          false,
+          '<Route handler> is deprecated, use <Route component> instead'
+        )
+
+        route.component = route.handler
+        delete route.handler
+      }
+
+      return route
+    }
+  
+  },
+
+  propTypes: {
+    path: string,
+    ignoreScrollBehavior: bool,
+    handler: component, // deprecated
+    component,
+    components,
+    getComponents: func
+  },
+
+  render() {
+    invariant(
+      false,
+      '<Route> elements are for router configuration only and should not be rendered'
+    )
+  }
+
+})
+
+export default Route
+","Create a React component named `Route` that declares which components should be rendered based on the URL. This component should have the following features:
+
+* It should be used to define a nested tree structure of routes.
+* It should search the tree to find a route that matches the URL.
+* It should render the components associated with the active routes.
+* It should include a static method called `createRouteFromReactElement` that converts a React element into a route.
+* It should accept the following props:
+    * `path`: A string representing the URL pattern.
+    * `ignoreScrollBehavior`: A boolean indicating whether to ignore the scroll behavior.
+    * `handler`: A deprecated component prop.
+    * `component`: A component prop.
+    * `components`: A components prop.
+    * `getComponents`: A function prop."
+"/**
+ *
+ * @flow
+ */
+
+'use strict';
+
+import React, { Component } from 'react';
+import {
+  View,
+  StyleSheet,
+  Text,
+	TouchableOpacity,
+} from 'react-native';
+
+import ChatCell from './ChatCell';
+
+import { loadChats, leaveChat } from 's5-action';
+import { S5Header, S5SwipeListView } from 's5-components';
+import { connect } from 'react-redux';
+import ActionButton from 'react-native-action-button';
+
+class ChatsScreen extends Component {
+
+  static propTypes = {
+    chats: React.PropTypes.object.isRequired,
+    messages: React.PropTypes.object.isRequired,
+    user: React.PropTypes.object,
+    navigator: React.PropTypes.object.isRequired,
+    leaveChat: React.PropTypes.func.isRequired,
+  };
+
+  state = {
+    listViewData: []
+  };
+
+	constructor(props) {
+		super(props);
+    this._openAddUserView = this._openAddUserView.bind(this);
+	}
+
+  componentDidMount(){
+    this.setState({
+      listViewData: this.props.chats.list
+    });
+  }
+
+  componentWillReceiveProps (nextProps) {
+    if (nextProps.chats.list !== this.props.chats.list) {
+      this.setState({
+        listViewData: nextProps.chats.list
+      });
+    }
+  }
+
+  _onRowPress(chat) {
+    this.props.navigator.push({
+      chatView: true,
+      chat,
+    });
+  }
+
+  _deleteRow(secId, rowId, rowMap, chatId) {
+
+		rowMap[`${secId}${rowId}`].closeRow();
+    this.props.leaveChat(chatId).then(() => {
+      // TODO do something after deleting.
+    });
+  }
+
+  _openAddUserView() {
+    this.props.navigator.push({selectUserView: 1});
+  }
+
+  _renderRow(chat) {
+    return (
+      <ChatCell
+        key={chat.id}
+        chat={chat}
+        message={this.props.messages.latest[chat.channelId]}
+        onPress={() => this._onRowPress(chat)}
+      />
+    )
+  }
+
+  render() {
+    return (
+      <View style={styles.container}>
+
+        <S5Header
+          title=""Chats""
+          style={{backgroundColor: '#224488'}}
+        />
+
+        <S5SwipeListView
+          ref=""listView""
+          data={this.state.listViewData}
+          renderRow={ (data) => this._renderRow(data) }
+          renderHiddenRow={ (data, secId, rowId, rowMap) => (
+            <View style={styles.rowBack}>
+              <View style={[styles.backRightBtn, styles.backRightBtnLeft]}>
+                <Text style={styles.backTextWhite}>Mark as Read</Text>
+              </View>
+              <TouchableOpacity style={[styles.backRightBtn, styles.backRightBtnRight]} onPress={ () => this._deleteRow(secId, rowId, rowMap, data.id) }>
+                <Text style={styles.backTextWhite}>Leave</Text>
+              </TouchableOpacity>
+            </View>
+          ) }
+          enableEmptySections={true}
+          rightOpenValue={-150}
+          removeClippedSubviews={false}
+          />
+
+        <ActionButton
+          buttonColor=""rgba(231,76,60,1)""
+          onPress={this._openAddUserView}
+        />
+      </View>
+	 );
+  }
+}
+
+const styles = StyleSheet.create({
+	container: {
+		backgroundColor: 'white',
+		flex: 1
+	},
+	standalone: {
+		marginTop: 30,
+		marginBottom: 30,
+	},
+	standaloneRowFront: {
+		alignItems: 'center',
+		backgroundColor: '#CCC',
+		justifyContent: 'center',
+		height: 50,
+	},
+	standaloneRowBack: {
+		alignItems: 'center',
+		backgroundColor: '#8BC645',
+		flex: 1,
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		padding: 15
+	},
+	backTextWhite: {
+		color: '#FFF'
+	},
+	rowFront: {
+		alignItems: 'center',
+		backgroundColor: '#CCC',
+		borderBottomColor: 'black',
+		borderBottomWidth: 1,
+		justifyContent: 'center',
+		height: 50,
+	},
+	rowBack: {
+		alignItems: 'center',
+		backgroundColor: '#DDD',
+		flex: 1,
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		paddingLeft: 15,
+	},
+	backRightBtn: {
+		alignItems: 'center',
+		bottom: 0,
+		justifyContent: 'center',
+		position: 'absolute',
+		top: 0,
+		width: 75
+	},
+	backRightBtnLeft: {
+		backgroundColor: 'blue',
+		right: 75
+	},
+	backRightBtnRight: {
+		backgroundColor: 'red',
+		right: 0
+	},
+	controls: {
+		alignItems: 'center',
+		marginBottom: 30
+	},
+	switchContainer: {
+		flexDirection: 'row',
+		justifyContent: 'center',
+		marginBottom: 5
+	},
+	switch: {
+		alignItems: 'center',
+		borderWidth: 1,
+		borderColor: 'black',
+		paddingVertical: 10,
+		width: 100,
+	}
+});
+
+function select(store) {
+  return {
+    user: store.user,
+    chats: store.chats,
+    messages: store.messages,
+  };
+}
+
+function actions(dispatch) {
+  return {
+    loadChats: () => dispatch(loadChats()), // @ TODO not used !!
+    leaveChat: (chatId) => dispatch(leaveChat(chatId)),
+  };
+}
+
+module.exports = connect(select, actions)(ChatsScreen);
+","Design a React Native chat screen with a list of chats and a button to add new users. Each chat should have a title, a message preview, and swipe-to-delete functionality. When a chat is tapped, navigate to a chat view. When the add user button is pressed, navigate to a user selection view."
+"import React, { Component } from 'react';
+import PropTypes from 'prop-types';
+import './Title.css';
+import logoSrc from './img/swipe.gif';
+import {Interactions} from './shared/data.js';
+import Swipeable from './components/Swipeable.js';
+import Delay from './components/Delay.js';
+import SwipeCue from './components/SwipeCue.js';
+
+class Title extends Component {
+  constructor(props) {
+    super(props);
+    this.onSwipeRight = this.onSwipeRight.bind(this);
+  }
+
+  // prefetch image before animation starts
+  componentDidMount() {
+    const image = new Image();
+    image.src = logoSrc;
+  }
+
+  onSwipeRight() {
+    const {onInteraction, onDone} = this.props;
+    onInteraction(Interactions.play());
+    onDone();
+  }
+
+  render() {
+    const swipeHeight = 128;
+    return (
+      <div className=""Title"">
+        <p className=""Title-intro"">
+          Swipe Right for CS!    
+        </p>
+        <Delay wait={250}>
+          <Swipeable
+            style={{width: '100%'}}
+            height={swipeHeight}
+            onSwipeRight={this.onSwipeRight}>
+            <div className=""Title-swipe"">
+              <SwipeCue style={{position: 'absolute', top: (swipeHeight/2)}} />
+              <img
+                className=""Title-logo""
+                alt=""Logo""
+                src={logoSrc}
+                height={128}
+                width={128} />
+              <div>Swipe right to play!</div>
+            </div>
+          </Swipeable>
+        </Delay>
+      </div>
+    );
+  }
+} 
+
+Title.propTypes = {
+  onInteraction: PropTypes.func.isRequired,
+  onDone: PropTypes.func.isRequired
+};
+
+export default Title;","Prompt a React component to render a swipe-able card that, when swiped right, triggers a callback and makes the card disappear. The card should contain an image and text."
+"import React from 'react';
+import userHelpers from '../utils/userHelpers';
+import authHelpers from '../utils/authHelpers';
+import MenuBar from '../components/MenuBar';
+import UserProfileForm from '../components/users/UserProfileForm';
+import ImageUpload from '../components/users/Uploader';
+import EditSuccess from '../components/users/EditSuccess';
+
+// TODO: Confirm profile deletion, msg about success, redirect user to home.
+
+class UserProfile extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      email: '',
+      username: '',
+      bio: '',
+      location: '',
+      isTraveling: null,
+      sucess: false,
+      instagram: '',
+      instagramProfilePic: '',
+    };
+
+    this.onNameChange = this.onNameChange.bind(this);
+    this.onEmailChange = this.onEmailChange.bind(this);
+    this.onLocationChange = this.onLocationChange.bind(this);
+    this.onLocationSelect = this.onLocationSelect.bind(this);
+    this.onBioChange = this.onBioChange.bind(this);
+    this.onTravelingChange = this.onTravelingChange.bind(this);
+    this.handleProfileSubmit = this.handleProfileSubmit.bind(this);
+    this.handleDeleteUser = this.handleDeleteUser.bind(this);
+    this.preventDefaultSubmit = this.preventDefaultSubmit.bind(this);
+  }
+
+  componentDidMount() {
+    userHelpers.getCurrentUserData()
+    .then((user) => {
+      console.log('user in comp did mount', user.data);
+      this.setState({
+        email: user.data.email,
+        username: user.data.username,
+        bio: user.data.bio,
+        location: user.data.location,
+        isTraveling: user.data.is_traveling,
+        avatarId: user.data.avatar_id,
+        instagramProfilePic: user.data.instagram_profile_pic,
+        instagram: user.data.instagram_username,
+      });
+    });
+  }
+
+  onNameChange(e) {
+    this.setState({ username: e.target.value });
+  }
+
+  onEmailChange(e) {
+    this.setState({ email: e.target.value });
+  }
+
+  onLocationChange(value) {
+    this.setState({ location: value });
+  }
+
+  onLocationSelect(location) {
+    this.setState({ location: location.label });
+  }
+
+  onBioChange(e) {
+    this.setState({ bio: e.target.value });
+  }
+
+  onTravelingChange(e) {
+    this.setState({ isTraveling: e.target.checked });
+  }
+
+  handleProfileSubmit() {
+    userHelpers.updateUser(this.state)
+    .then((user) => {
+      console.log(user);
+      this.setState({
+        success: true,
+        duplicateEmail: false,
+      });
+    })
+    .catch((err) => {
+      if (err.data.constraint === 'users_email_unique') {
+        this.setState({
+          success: false,
+          duplicateEmail: true,
+        });
+      }
+      console.log(err);
+    });
+  }
+
+  handleDeleteUser() {
+    userHelpers.deleteUser().
+    then((info) => {
+      console.log(info);
+      authHelpers.logout();
+      this.context.router.push('/signup');
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+  }
+
+  preventDefaultSubmit(e) {
+    e.preventDefault();
+  }
+
+  render() {
+    return (
+      <div>
+        <MenuBar />
+        <div className=""ui container top-margin-bit"">
+          <h1 className=""ui dividing header"" id=""editprofileheader"">
+            Edit Profile:
+          </h1>
+        </div>
+        <div className=""ui raised text container segment"">
+          <div className=""ui container centered"">
+            <ImageUpload
+              avatarId={this.state.avatarId}
+              instagramProfilePic={this.state.instagramProfilePic}
+            />
+            <UserProfileForm
+              username={this.state.username}
+              email={this.state.email}
+              location={this.state.location}
+              bio={this.state.bio}
+              isTraveling={this.state.isTraveling}
+              onNameChange={this.onNameChange}
+              onEmailChange={this.onEmailChange}
+              onLocationChange={this.onLocationChange}
+              onLocationSelect={this.onLocationSelect}
+              onBioChange={this.onBioChange}
+              onTravelingChange={this.onTravelingChange}
+              onDeleteUser={this.handleDeleteUser}
+              onProfileSubmit={this.handleProfileSubmit}
+              preventDefaultSubmit={this.preventDefaultSubmit}
+            />
+            <EditSuccess
+              success={this.state.success}
+              duplicateEmail={this.state.duplicateEmail}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
+UserProfile.contextTypes = {
+  router: React.PropTypes.object.isRequired,
+};
+
+export default UserProfile;
+","Generate a React component for managing user profile information, including the ability to update the profile and upload an avatar image. Include a success message after profile updates."
+"import React from 'react'
+import { push } from 'react-router-redux'
+import graphFetcher from 'utils/graphFetcher'
+import formatFields from 'utils/formatFields'
+import { getSlugFromId } from 'utils/helpers'
+import { newToast, errorToasts } from './uiActions'
+
+export const REQUEST_ENTRIES = 'REQUEST_ENTRIES'
+export const RECEIVE_ENTRIES = 'RECEIVE_ENTRIES'
+export const NEW_ENTRY = 'NEW_ENTRY'
+export const UPDATE_ENTRY = 'UPDATE_ENTRY'
+export const DELETE_ENTRY = 'DELETE_ENTRY'
+export const ENTRY_DETAILS = 'ENTRY_DETAILS'
+
+/**
+ * Creates a new Entry
+ * @param {string} title
+ * @param {string} section
+ * @param {string} status
+ * @param {string} dateCreated
+ * @param {object} rawOptions
+ */
+export function newEntry (title, section, status, dateCreated, rawOptions) {
+  return async (dispatch, getState) => {
+    const { fields, sections, user } = getState()
+    const options = await formatFields(rawOptions, fields.fields)
+
+    const query = `mutation ($data: EntriesInput!) {
+      addEntry(data: $data) {
+        _id
+        title
+        slug
+        status
+        fields {
+          fieldId
+          handle
+          value
+        }
+        section
+        author {
+          username
+        }
+        dateCreated
+      }
+    }`
+
+    const variables = {
+      data: {
+        title,
+        section,
+        status,
+        dateCreated,
+        fields: options,
+        author: user._id
+      }
+    }
+
+    return graphFetcher(query, variables)
+      .then((json) => {
+        const { addEntry } = json.data.data
+
+        dispatch({ type: NEW_ENTRY, addEntry })
+        dispatch(newToast({
+          message: <span><b>{addEntry.title}</b> has been created!</span>,
+          style: 'success'
+        }))
+        const sectionSlug = getSlugFromId(sections.sections, addEntry.section)
+        dispatch(push(`/entries/${sectionSlug}/${addEntry._id}`))
+      })
+      .catch(errorToasts)
+  }
+}
+
+/**
+ * Saves updates of an existing Entry
+ * @param {string} _id
+ * @param {object} data
+ */
+export function updateEntry (_id, data) {
+  return async (dispatch, getState) => {
+    const state = getState()
+    const { title, status, dateCreated, ...fields } = data
+    const options = await formatFields(fields, state.fields.fields)
+
+    const query = `mutation ($_id: ID!, $data: EntriesInput!) {
+      updateEntry(_id: $_id, data: $data) {
+        _id
+        title
+        status
+        fields {
+          fieldId
+          handle
+          value
+        }
+      }
+    }`
+
+    const variables = {
+      _id,
+      data: {
+        title,
+        status,
+        dateCreated,
+        fields: options
+      }
+    }
+
+    return graphFetcher(query, variables)
+      .then((json) => {
+        const updatedEntry = json.data.data.updateEntry
+        dispatch({ type: UPDATE_ENTRY, updateEntry: updatedEntry })
+        dispatch(newToast({
+          message: <span><b>{updatedEntry.title}</b> has been updated!</span>,
+          style: 'success'
+        }))
+      })
+      .catch(errorToasts)
+  }
+}
+
+/**
+ * Posts to GraphQL to delete an Entry
+ * @param {string} _id
+ * @param {boolean} [redirect=false] - Redirect to the entries page after deleting the entry
+ */
+export function deleteEntry (_id, redirect = false) {
+  return (dispatch) => {
+    const query = `mutation ($_id:ID!) {
+      removeEntry(_id: $_id) {
+        _id
+        title
+      }
+    }`
+
+    return graphFetcher(query, { _id })
+      .then((json) => {
+        const { removeEntry } = json.data.data
+        if (redirect) dispatch(push('/entries'))
+        dispatch({ type: DELETE_ENTRY, id: removeEntry._id })
+        dispatch(newToast({
+          message: <span><b>{removeEntry.title}</b> has been deleted.</span>,
+          style: 'success'
+        }))
+      })
+      .catch(errorToasts)
+  }
+}
+
+/**
+ * Gets the details (fields object) of an Entry
+ * @param {string} _id - Mongo ID of Entry.
+ */
+export function entryDetails (_id) {
+  return (dispatch) => {
+    const query = `query ($_id:ID!) {
+      entry (_id: $_id) {
+        fields {
+          fieldId
+          handle
+          value
+        }
+      }
+    }`
+
+    return graphFetcher(query, { _id })
+      .then((json) => {
+        const { entry } = json.data.data
+        dispatch({ type: UPDATE_ENTRY, updateEntry: { _id, ...entry } })
+      })
+      .catch(errorToasts)
+  }
+}
+","Create React Redux action creators for managing a collection of entries, including creation, update, deletion, and fetching of entry details."
+"/* eslint-disable camelcase */
+
+import React, { Component } from 'react';
+import { StyleSheet, View, SafeAreaView } from 'react-native';
+import { connect } from 'react-redux';
+import qs from 'qs';
+import { withTheme, Button } from 'react-native-paper';
+import { connectLocalization } from '../../components/Localization';
+import PXListItem from '../../components/PXListItem';
+import SingleChoiceDialog from '../../components/SingleChoiceDialog';
+import SearchIllustsBookmarkRangesPickerDialog from '../../components/SearchIllustsBookmarkRangesPickerDialog';
+import SearchNovelsBookmarkRangesPickerDialog from '../../components/SearchNovelsBookmarkRangesPickerDialog';
+import {
+  SEARCH_TYPES,
+  SEARCH_PERIOD_TYPES,
+  SCREENS,
+} from '../../common/constants';
+import { globalStyles, globalStyleVariables } from '../../styles';
+
+const styles = StyleSheet.create({
+  listContainer: {
+    flex: 1,
+  },
+  searchFilterButtonContainer: {
+    padding: 10,
+  },
+  searchFilterButton: {
+    backgroundColor: globalStyleVariables.PRIMARY_COLOR,
+    padding: 10,
+    alignItems: 'center',
+  },
+  searchFilterButtonText: {
+    color: '#fff',
+  },
+});
+
+class SearchFilterModal extends Component {
+  constructor(props) {
+    super(props);
+    const {
+      searchFilter: {
+        search_target,
+        period,
+        sort,
+        start_date,
+        end_date,
+        bookmark_num_min,
+        bookmark_num_max,
+        bookmarkCountsTag,
+      },
+    } = props.route.params;
+    this.state = {
+      target: search_target || 'partial_match_for_tags',
+      period: period || SEARCH_PERIOD_TYPES.ALL,
+      bookmarkCountsTag: bookmarkCountsTag || '',
+      sort: sort || 'date_desc',
+      startDate: start_date,
+      endDate: end_date,
+      likes: this.getSelectedLikesFilterValue(
+        bookmark_num_min,
+        bookmark_num_max,
+      ),
+      bookmarkNumMin: bookmark_num_min,
+      bookmarkNumMax: bookmark_num_max,
+      selectedFilterType: null,
+      selectedPickerValue: null,
+      filterList: this.getFilterList(true),
+    };
+  }
+
+  getFilterList = (init) => {
+    const { i18n, user, route } = this.props;
+    // const { startDate, endDate } = this.state;
+    const {
+      searchFilter: { start_date, end_date },
+      searchType,
+    } = route.params;
+    let targetOptions;
+    if (searchType === SEARCH_TYPES.ILLUST) {
+      targetOptions = [
+        {
+          value: 'partial_match_for_tags',
+          label: i18n.searchTargetTagPartial,
+        },
+        {
+          value: 'exact_match_for_tags',
+          label: i18n.searchTargetTagExact,
+        },
+        {
+          value: 'title_and_caption',
+          label: i18n.searchTargetTitleCaption,
+        },
+      ];
+    } else {
+      targetOptions = [
+        {
+          value: 'partial_match_for_tags',
+          label: i18n.searchTargetTagPartial,
+        },
+        {
+          value: 'exact_match_for_tags',
+          label: i18n.searchTargetTagExact,
+        },
+        {
+          value: 'text',
+          label: i18n.searchTargetText,
+        },
+        {
+          value: 'keyword',
+          label: i18n.searchTargetKeyword,
+        },
+      ];
+    }
+    const bookmarkCountsTagOptions = [
+      {
+        value: '',
+        label: i18n.searchBookmarkCountsTagAll,
+      },
+      {
+        value: '100users入り',
+        label: '100users入り',
+      },
+      {
+        value: '500users入り',
+        label: '500users入り',
+      },
+      {
+        value: '1000users入り',
+        label: '1000users入り',
+      },
+      {
+        value: '5000users入り',
+        label: '5000users入り',
+      },
+      {
+        value: '10000users入り',
+        label: '10000users入り',
+      },
+      {
+        value: '30000users入り',
+        label: '30000users入り',
+      },
+      {
+        value: '50000users入り',
+        label: '50000users入り',
+      },
+      {
+        value: '100000users入り',
+        label: '100000users入り',
+      },
+    ];
+    const extraPeriodOption = {};
+    if (init) {
+      if (start_date && end_date) {
+        extraPeriodOption.value = SEARCH_PERIOD_TYPES.CUSTOM_DATE;
+        extraPeriodOption.label = `${start_date} - ${end_date}`;
+      }
+    } else if (this.state.startDate && this.state.endDate) {
+      extraPeriodOption.value = SEARCH_PERIOD_TYPES.CUSTOM_DATE;
+      extraPeriodOption.label = `${this.state.startDate} - ${this.state.endDate}`;
+    }
+    let periodOptions = [
+      {
+        value: SEARCH_PERIOD_TYPES.ALL,
+        label: i18n.searchPeriodAll,
+      },
+      {
+        value: SEARCH_PERIOD_TYPES.LAST_DAY,
+        label: i18n.searchPeriodLastDay,
+      },
+      {
+        value: SEARCH_PERIOD_TYPES.LAST_WEEK,
+        label: i18n.searchPeriodLastWeek,
+      },
+      {
+        value: SEARCH_PERIOD_TYPES.LAST_MONTH,
+        label: i18n.searchPeriodLastMonth,
+      },
+      {
+        value: SEARCH_PERIOD_TYPES.LAST_HALF_YEAR,
+        label: i18n.searchPeriodLastHalfYear,
+      },
+      {
+        value: SEARCH_PERIOD_TYPES.LAST_YEAR,
+        label: i18n.searchPeriodLastYear,
+      },
+      {
+        value: SEARCH_PERIOD_TYPES.DATE,
+        label: i18n.searchPeriodSpecifyDate,
+      },
+    ];
+    if (extraPeriodOption.value) {
+      periodOptions = [extraPeriodOption, ...periodOptions];
+    }
+    const filterOptions = [
+      {
+        key: 'target',
+        options: targetOptions,
+      },
+      {
+        key: 'period',
+        options: periodOptions,
+      },
+      {
+        key: 'bookmarkCountsTag',
+        options: bookmarkCountsTagOptions,
+      },
+      {
+        key: 'sort',
+        options: [
+          {
+            value: 'date_desc',
+            label: i18n.searchOrderNewest,
+          },
+          {
+            value: 'date_asc',
+            label: i18n.searchOrderOldest,
+          },
+          {
+            value: 'popularity',
+            label: i18n.searchOrderPopularity,
+          },
+        ],
+      },
+    ];
+    if (user.is_premium) {
+      filterOptions.push({
+        key: 'likes',
+        options: [
+          {
+            value: null,
+            label: i18n.searchLikesAll,
+          },
+        ],
+      });
+    }
+    return filterOptions;
+  };
+
+  getSearchTypeName = (type) => {
+    const { i18n } = this.props;
+    switch (type) {
+      case 'target':
+        return i18n.searchTarget;
+      case 'bookmarkCountsTag':
+        return i18n.searchBookmarkCountsTag;
+      case 'period':
+        return i18n.searchPeriod;
+      case 'sort':
+        return i18n.searchOrder;
+      case 'likes':
+        return i18n.searchLikes;
+      default:
+        return '';
+    }
+  };
+
+  getSelectedFilterName = (key, options) => {
+    if (key !== 'likes') {
+      return options.find((o) => o.value === this.state[key]).label;
+    }
+    const { bookmarkNumMin, bookmarkNumMax } = this.state;
+    if (!bookmarkNumMin && !bookmarkNumMax) {
+      const { i18n } = this.props;
+      return i18n.searchLikesAll;
+    }
+    if (!bookmarkNumMax) {
+      return `${bookmarkNumMin}+`;
+    }
+    return `${bookmarkNumMin} - ${bookmarkNumMax}`;
+  };
+
+  getSelectedLikesFilterValue = (bookmarkNumMin, bookmarkNumMax) => {
+    if (!bookmarkNumMin && !bookmarkNumMax) {
+      return '';
+    }
+    if (!bookmarkNumMax) {
+      return `bookmarkNumMin=${bookmarkNumMin}`;
+    }
+    return `bookmarkNumMin=${bookmarkNumMin}&bookmarkNumMax=${bookmarkNumMax}`;
+  };
+
+  handleOnPressFilterOption = (filterType) => {
+    const value = this.state[filterType];
+    this.setState({
+      selectedFilterType: filterType,
+      selectedPickerValue: value,
+    });
+  };
+
+  handleOnOkPickerDialog = (value) => {
+    const { selectedFilterType, startDate, endDate } = this.state;
+    if (selectedFilterType === 'period') {
+      if (value === SEARCH_PERIOD_TYPES.DATE) {
+        const { navigate } = this.props.navigation;
+        navigate(SCREENS.SearchFilterPeriodDateModal, {
+          onConfirmPeriodDate: this.handleOnConfirmPeriodDate,
+          startDate,
+          endDate,
+        });
+        this.setState({
+          selectedFilterType: null,
+        });
+      } else {
+        this.setState({
+          [selectedFilterType]: value,
+          selectedPickerValue: value,
+          selectedFilterType: null,
+          startDate: null,
+          endDate: null,
+        });
+      }
+    } else {
+      const newState = {
+        [selectedFilterType]: value,
+        selectedPickerValue: value,
+        selectedFilterType: null,
+      };
+      if (selectedFilterType === 'likes') {
+        if (value) {
+          const { bookmarkNumMin, bookmarkNumMax } = qs.parse(value);
+          newState.bookmarkNumMin = bookmarkNumMin;
+          newState.bookmarkNumMax = bookmarkNumMax;
+        } else {
+          newState.bookmarkNumMin = null;
+          newState.bookmarkNumMax = null;
+        }
+      }
+      this.setState(newState);
+    }
+  };
+
+  handleOnCancelPickerDialog = () => {
+    this.setState({
+      selectedFilterType: null,
+    });
+  };
+
+  handleOnConfirmPeriodDate = (startDate, endDate) => {
+    const { goBack } = this.props.navigation;
+    goBack(null);
+    this.setState(
+      {
+        startDate,
+        endDate,
+      },
+      () => {
+        this.setState({
+          filterList: this.getFilterList(),
+          period: SEARCH_PERIOD_TYPES.CUSTOM_DATE,
+          selectedPickerValue: SEARCH_PERIOD_TYPES.CUSTOM_DATE,
+        });
+      },
+    );
+  };
+
+  handleOnPressApplyFilter = () => {
+    const {
+      navigation: { navigate },
+    } = this.props;
+    const {
+      target,
+      period,
+      sort,
+      startDate,
+      endDate,
+      bookmarkNumMin,
+      bookmarkNumMax,
+      bookmarkCountsTag,
+    } = this.state;
+    navigate(SCREENS.SearchResult, {
+      target,
+      period,
+      sort,
+      startDate,
+      endDate,
+      bookmarkNumMin,
+      bookmarkNumMax,
+      bookmarkCountsTag,
+    });
+  };
+
+  render() {
+    const { i18n, navigationStateKey, route, theme } = this.props;
+    const { word, searchType } = route.params;
+    const {
+      selectedFilterType,
+      selectedPickerValue,
+      filterList,
+      searchTarget,
+      period,
+      startDate,
+      endDate,
+    } = this.state;
+    return (
+      <SafeAreaView
+        style={[
+          globalStyles.container,
+          { backgroundColor: theme.colors.background },
+        ]}
+      >
+        <View style={styles.listContainer}>
+          {filterList.map((list) => (
+            <PXListItem
+              key={list.key}
+              title={this.getSearchTypeName(list.key)}
+              description={this.getSelectedFilterName(list.key, list.options)}
+              onPress={() => this.handleOnPressFilterOption(list.key)}
+            />
+          ))}
+        </View>
+        <View style={styles.searchFilterButtonContainer}>
+          <Button mode=""contained"" onPress={this.handleOnPressApplyFilter}>
+            {i18n.searchApplyFilter}
+          </Button>
+        </View>
+        {selectedFilterType && selectedFilterType !== 'likes' && (
+          <SingleChoiceDialog
+            title={this.getSearchTypeName(selectedFilterType)}
+            items={filterList
+              .find((f) => f.key === selectedFilterType)
+              .options.map((option) => ({
+                value: option.value,
+                label: option.label,
+              }))}
+            visible
+            scrollable
+            selectedItemValue={selectedPickerValue}
+            onPressCancel={this.handleOnCancelPickerDialog}
+            onPressOk={this.handleOnOkPickerDialog}
+          />
+        )}
+        {selectedFilterType === 'likes' && searchType === SEARCH_TYPES.ILLUST && (
+          <SearchIllustsBookmarkRangesPickerDialog
+            navigationStateKey={navigationStateKey}
+            word={word}
+            searchOptions={{
+              search_target: searchTarget,
+              period,
+              start_date: startDate,
+              end_date: endDate,
+            }}
+            selectedItemValue={selectedPickerValue}
+            onPressCancel={this.handleOnCancelPickerDialog}
+            onPressOk={this.handleOnOkPickerDialog}
+          />
+        )}
+        {selectedFilterType === 'likes' && searchType === SEARCH_TYPES.NOVEL && (
+          <SearchNovelsBookmarkRangesPickerDialog
+            navigationStateKey={navigationStateKey}
+            word={word}
+            searchOptions={{
+              search_target: searchTarget,
+              period,
+              start_date: startDate,
+              end_date: endDate,
+            }}
+            selectedItemValue={selectedPickerValue}
+            onPressCancel={this.handleOnCancelPickerDialog}
+            onPressOk={this.handleOnOkPickerDialog}
+          />
+        )}
+      </SafeAreaView>
+    );
+  }
+}
+
+export default withTheme(
+  connectLocalization(
+    connect((state, props) => ({
+      user: state.auth.user,
+      navigationStateKey: props.route.key,
+    }))(SearchFilterModal),
+  ),
+);
+","**Description:** Generate the code snippet for a React Native component that displays a modal with filters for search options. The filter options should include search target, period, bookmark counts tag, sort order, and likes. Implement the necessary handlers to update the state and navigate to the search results page with the applied filters."
+"import React from 'react'
+
+class Assignments extends React.Component {
+  render() {
+    return (
+      <div>
+        <h3>Assignments</h3>
+        {this.props.children || <p>Choose an assignment from the sidebar.</p>}
+      </div>
+    )
+  }
+}
+
+module.exports = Assignments
+",Create a React component called 'Assignments' that will conditionally render a greeting and assignment list based on props.
+"import React from 'react';
+import pure from 'recompose/pure';
+import SvgIcon from '../../SvgIcon';
+
+let EditorBorderOuter = (props) => (
+  <SvgIcon {...props}>
+    <path d=""M13 7h-2v2h2V7zm0 4h-2v2h2v-2zm4 0h-2v2h2v-2zM3 3v18h18V3H3zm16 16H5V5h14v14zm-6-4h-2v2h2v-2zm-4-4H7v2h2v-2z""/>
+  </SvgIcon>
+);
+EditorBorderOuter = pure(EditorBorderOuter);
+EditorBorderOuter.displayName = 'EditorBorderOuter';
+EditorBorderOuter.muiName = 'SvgIcon';
+
+export default EditorBorderOuter;
+","Generate the code for a React component that renders an ""Editor Border Outer"" icon for Material Design. The icon should be a square with a border around it, with two small squares inside."
+"import React from 'react';
+import Helmet from 'react-helmet';
+import { renderToString, renderToStaticMarkup } from 'react-dom/server';
+import { StaticRouter } from 'react-router-dom';
+import { ServerStyleSheet } from 'styled-components';
+
+import config from '../../../config';
+
+import ServerHTML from './ServerHTML';
+import Application from '../../../app/components/Application';
+
+export default function reactApplicationMiddleware(request, response) {
+  // Ensure a nonce has been provided to us.
+  // See the server/middleware/security.js for more info.
+  if (typeof response.locals.nonce !== 'string') {
+    throw new Error('A ""nonce"" value has not been attached to the response');
+  }
+  const nonce = response.locals.nonce;
+
+  // It's possible to disable SSR, which can be useful in development mode.
+  // In this case traditional client side only rendering will occur.
+  if (config('disableSSR')) {
+    if (process.env.BUILD_FLAG_IS_DEV === 'true') {
+      // eslint-disable-next-line no-console
+      console.log('==> Handling react route without SSR');
+    }
+    // SSR is disabled so we will return an ""empty"" html page and
+    // rely on the client to initialize and render the react application.
+    const html = renderToStaticMarkup(<ServerHTML nonce={nonce} />);
+    response.status(200).send(`<!DOCTYPE html>${html}`);
+    return;
+  }
+
+  // Create a context for <StaticRouter>, which will allow us to
+  // query for the results of the render.
+  const reactRouterContext = {};
+
+  // Declare our React application.
+  const app = (
+    <StaticRouter location={request.url} context={reactRouterContext}>
+      <Application />
+    </StaticRouter>
+  );
+
+
+  const appString = renderToString(app);
+
+  // Generate the html response.
+  const html = renderToStaticMarkup(
+    <ServerHTML
+      reactAppString={appString}
+      nonce={nonce}
+      sheet={new ServerStyleSheet()}
+      helmet={Helmet.rewind()}
+    />,
+  );
+
+  // Check if the router context contains a redirect, if so we need to set
+  // the specific status and redirect header and end the response.
+  if (reactRouterContext.url) {
+    response.status(302).setHeader('Location', reactRouterContext.url);
+    response.end();
+    return;
+  }
+
+  response
+    .status(
+      reactRouterContext.missed ? 404 : 200,
+    )
+    .send(`<!DOCTYPE html>${html}`);
+}
+",Describe how this code generates and returns the HTML response for a React application using server-side rendering.
+"/**
+ * https://github.com/facebook/react-native/blob/master/Libraries/Text/TextStylePropTypes.js
+ */
+import React from 'react';
+import ColorPropType from './ColorPropType';
+import ViewStylePropTypes from './ViewStylePropTypes';
+
+const { PropTypes } = React;
+
+// TODO: use spread instead of Object.assign/create after #6560135 is fixed
+const TextStylePropTypes = Object.assign(Object.create(ViewStylePropTypes), {
+  color: ColorPropType,
+  fontFamily: PropTypes.string,
+  fontSize: PropTypes.number,
+  fontStyle: PropTypes.oneOf(['normal', 'italic']),
+  /**
+   * Specifies font weight. The values 'normal' and 'bold' are supported for
+   * most fonts. Not all fonts have a variant for each of the numeric values,
+   * in that case the closest one is chosen.
+   */
+  fontWeight: PropTypes.oneOf(
+    ['normal', 'bold',
+     '100', '200', '300', '400', '500', '600', '700', '800', '900']
+  ),
+  textShadowOffset: PropTypes.shape(
+    {
+      width: PropTypes.number,
+      height: PropTypes.number
+    }
+  ),
+  textShadowRadius: PropTypes.number,
+  textShadowColor: ColorPropType,
+  /**
+   * @platform ios
+   */
+  letterSpacing: PropTypes.number,
+  lineHeight: PropTypes.number,
+  /**
+   * Specifies text alignment. The value 'justify' is only supported on iOS.
+   */
+  textAlign: PropTypes.oneOf(
+    ['auto', 'left', 'right', 'center', 'justify']
+  ),
+  /**
+   * @platform android
+   */
+  textAlignVertical: PropTypes.oneOf(
+    ['auto', 'top', 'bottom', 'center']
+  ),
+  /**
+   * @platform ios
+   */
+  textDecorationLine: PropTypes.oneOf(
+    ['none', 'underline', 'line-through', 'underline line-through']
+  ),
+  /**
+   * @platform ios
+   */
+  textDecorationStyle: PropTypes.oneOf(
+    ['solid', 'double', 'dotted', 'dashed']
+  ),
+  /**
+   * @platform ios
+   */
+  textDecorationColor: ColorPropType,
+  /**
+   * @platform ios
+   */
+  writingDirection: PropTypes.oneOf(
+    ['auto', 'ltr', 'rtl']
+  ),
+});
+
+module.exports = TextStylePropTypes;
+","Provide a definition of `TextStylePropTypes` for React Native as a JavaScript object, including all the supported properties for styling text."
+"import React, { Component } from 'react';
+import { Menu, Container, Image } from 'semantic-ui-react'
+import { Link, withRouter } from 'react-router-dom';
+import image from '../img/lotus.svg';
+import { isEmpty } from 'lodash';
+import './navbar.css'
+
+import { bindActionCreators } from 'redux';
+import { connect } from 'react-redux';
+import { signOut } from '../redux/actions';
+
+
+class TopNavBar extends Component {
+	render() {
+		const { signOut, currentUser } = this.props
+
+		if (!isEmpty(currentUser) && localStorage.getItem(""auth"")) {
+			return (
+				<Menu fixed='top' className='navbar'>
+					<Container>
+						<Menu.Item header as={Link} to='/' className='nav-main-item'>
+							<Image size='mini' src={image} id='nav-logo'></Image>
+							Bloom
+						</Menu.Item>
+						<Menu.Menu position='right'>
+							<Menu.Item name='about' as={Link} to='/about'>
+								About
+							</Menu.Item>
+							<Menu.Item name='account' as={Link} to='/account'>
+								Account
+							</Menu.Item>
+							<Menu.Item name='signout' as='a' onClick={signOut}>
+								Sign out
+							</Menu.Item>
+						</Menu.Menu>
+					</Container>
+				</Menu>
+			)
+		} else {
+			return (
+				<Menu fixed='top' className='navbar'>
+					<Container>
+						<Menu.Item header as={Link} to='/' className='nav-main-item'>
+							<Image size='mini' src={image} id='nav-logo'></Image>
+							Bloom
+						</Menu.Item>
+						<Menu.Menu position='right'>
+							<Menu.Item name='about' as={Link} to='/about'>
+								About
+							</Menu.Item>
+							<Menu.Item name='login' as={Link} to='/login'>
+								Sign in
+							</Menu.Item>
+						</Menu.Menu>
+					</Container>
+				</Menu>
+			)
+		}
+	}
+}
+
+const mapStateToProps = (state) => {
+    return {
+        currentUser: state.currentUser,
+    }
+}
+
+const mapDispatchToProps = (dispatch) => {
+    return bindActionCreators({
+        signOut,
+    }, dispatch)
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(TopNavBar);
+","Generate the React code for a top navigation bar for a website. The navigation bar should have a logo on the left, and a list of links on the right. The links should include ""About,"" ""Account,"" and ""Sign out."" If the user is not signed in, the ""Account"" and ""Sign out"" links should be replaced with a ""Sign in"" link."
+"/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
+
+import React from 'react';
+import tiniestCat from './assets/tiniest-cat.jpg';
+
+export default () =>
+  <img id=""feature-image-inclusion"" src={tiniestCat} alt=""tiniest cat"" />;
+","Create a React component that imports an image called ""tiniest-cat.jpg"" from the ""assets"" folder, sets the image's source attribute to that image, and adds the alt text ""tiniest cat"" to the image."
+"import React from 'react'
+import { Dropdown } from 'semantic-ui-react'
+
+const DropdownExampleCustomNoResultsMessage = () => (
+  <Dropdown
+    options={[]}
+    search
+    selection
+    placeholder='A custom message...'
+    noResultsMessage='Try another search.'
+  />
+)
+
+export default DropdownExampleCustomNoResultsMessage
+","Design a React component using Semantic UI's Dropdown that displays a customized ""no results found"" message, such as ""Try another search."""
+"import classNames from 'classnames';
+import React from 'react';
+
+import CustomPropTypes from './utils/CustomPropTypes';
+
+export default class Tooltip extends React.Component {
+  render() {
+    const {
+      placement,
+      positionLeft,
+      positionTop,
+      arrowOffsetLeft,
+      arrowOffsetTop,
+      className,
+      style,
+      children,
+      ...props
+    } = this.props;
+
+    return (
+      <div
+        role=""tooltip""
+        {...props}
+        className={classNames(className, 'tooltip', placement)}
+        style={{left: positionLeft, top: positionTop, ...style}}
+      >
+        <div
+          className=""tooltip-arrow""
+          style={{left: arrowOffsetLeft, top: arrowOffsetTop}}
+        />
+
+        <div className=""tooltip-inner"">
+          {children}
+        </div>
+      </div>
+    );
+  }
+}
+
+Tooltip.propTypes = {
+  /**
+   * An html id attribute, necessary for accessibility
+   * @type {string}
+   * @required
+   */
+  id: CustomPropTypes.isRequiredForA11y(
+    React.PropTypes.oneOfType([
+      React.PropTypes.string,
+      React.PropTypes.number
+    ])
+  ),
+
+  /**
+   * The direction the tooltip is positioned towards
+   */
+  placement: React.PropTypes.oneOf(['top', 'right', 'bottom', 'left']),
+
+  /**
+   * The `left` position value for the tooltip
+   */
+  positionLeft: React.PropTypes.number,
+  /**
+   * The `top` position value for the tooltip
+   */
+  positionTop: React.PropTypes.number,
+  /**
+   * The `left` position value for the tooltip arrow
+   */
+  arrowOffsetLeft: React.PropTypes.oneOfType([
+    React.PropTypes.number, React.PropTypes.string
+  ]),
+  /**
+   * The `top` position value for the tooltip arrow
+   */
+  arrowOffsetTop: React.PropTypes.oneOfType([
+    React.PropTypes.number, React.PropTypes.string
+  ])
+};
+
+Tooltip.defaultProps = {
+  placement: 'right'
+};
+",Describe a reusable React component for creating tooltips that can be positioned anywhere around an element and can be customized with various styles and arrow offsets.
+"/* eslint-disable import/default */
+
+import React from 'react';
+import {render} from 'react-dom';
+import { Provider } from 'react-redux';
+import { Router, browserHistory } from 'react-router';
+import routes from './routes';
+import configureStore from './store/configureStore';
+import './styles/styles.scss'; // Yep, that's right. You can import SASS/CSS files too! Webpack will run the associated loader and plug this into the page.
+import { syncHistoryWithStore } from 'react-router-redux';
+
+browserHistory.listen( location =>  {
+  window.ga('send', 'pageview', location.pathname);
+});
+
+const store = configureStore();
+
+// Create an enhanced history that syncs navigation events with the store
+const history = syncHistoryWithStore(browserHistory, store);
+
+render(
+  <Provider store={store}>
+    <Router history={history} routes={routes} />
+  </Provider>, document.getElementById('app')
+);
+","Create the main entry point for a React application using React Router, Redux, and Webpack, including stylesheet importing, Google Analytics integration, and synchronous history with the store."
+"import React from 'react';
+import pure from 'recompose/pure';
+import SvgIcon from '../../SvgIcon';
+
+let ActionOpenInBrowser = (props) => (
+  <SvgIcon {...props}>
+    <path d=""M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h4v-2H5V8h14v10h-4v2h4c1.1 0 2-.9 2-2V6c0-1.1-.89-2-2-2zm-7 6l-4 4h3v6h2v-6h3l-4-4z""/>
+  </SvgIcon>
+);
+ActionOpenInBrowser = pure(ActionOpenInBrowser);
+ActionOpenInBrowser.displayName = 'ActionOpenInBrowser';
+
+export default ActionOpenInBrowser;
+",Craft a component in React to delineate an icon representing the functionality of launching a URL in a web browser. Utilize Material Design as a guideline for the visual aesthetics.
+"import React from 'react';
+import pure from 'recompose/pure';
+import SvgIcon from '../../SvgIcon';
+
+let CommunicationSwapCalls = (props) => (
+  <SvgIcon {...props}>
+    <path d=""M18 4l-4 4h3v7c0 1.1-.9 2-2 2s-2-.9-2-2V8c0-2.21-1.79-4-4-4S5 5.79 5 8v7H2l4 4 4-4H7V8c0-1.1.9-2 2-2s2 .9 2 2v7c0 2.21 1.79 4 4 4s4-1.79 4-4V8h3l-4-4z""/>
+  </SvgIcon>
+);
+CommunicationSwapCalls = pure(CommunicationSwapCalls);
+CommunicationSwapCalls.displayName = 'CommunicationSwapCalls';
+CommunicationSwapCalls.muiName = 'SvgIcon';
+
+export default CommunicationSwapCalls;
+","Design a React component for an SVG icon representing two phones swapping places, with the following characteristics:
+- It should be named `CommunicationSwapCalls`.
+- It should use the `SvgIcon` component as its base.
+- It should have a `path` element with a specific `d` attribute that defines the shape of the icon.
+- It should be wrapped in the `pure` HOC from `recompose` to enhance performance.
+- It should have a `displayName` property set to `CommunicationSwapCalls`.
+- It should have a `muiName` property set to `SvgIcon`.
+- It should be exported as the default export."
+"import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
+import { getRoute } from '../ducks/router';
+import Label from '../components/Label';
+import {
+    getTasksSummary,
+    STATUS_SCHEDULED,
+    STATUS_FAILED,
+    STATUS_COMPLETED
+} from '../ducks/download';
+import { getCurrentTrack, getParentResource } from '../ducks/tracks';
+import { getMessage } from '../ducks/flashMessages';
+import chalk from 'chalk';
+
+const mapStateToProps = state => {
+    return {
+        route: getRoute(state),
+        parentResource: getParentResource(state),
+        tasksSummary: getTasksSummary(state),
+        currentTrack: getCurrentTrack(state),
+        message: getMessage(state)
+    };
+};
+const mapDispatchToProps = dispatch => {
+    return bindActionCreators({}, dispatch);
+};
+
+const getTitle = (route, playlist, tasksSummary, currentTrack, message) => {
+    if (message) {
+        return message;
+    }
+    const screenName = route ? route.screen : null;
+    const playlistName = playlist ? playlist.label : null;
+    let part0, part1, part2;
+    if (screenName === 'Search') {
+        part0 = 'kalama (press Ctrl+L to help)';
+    } else {
+        part0 = screenName;
+    }
+    const tasksLeft = tasksSummary[STATUS_SCHEDULED];
+    const tasksFailed = tasksSummary[STATUS_FAILED];
+    const tasksCompleted = tasksSummary[STATUS_COMPLETED];
+    if (tasksLeft > 0) {
+        part1 = `Download: ${tasksLeft} (${chalk.green(
+            tasksCompleted || 0
+        )}|${chalk.red(tasksFailed || 0)})`;
+    } else {
+        part1 = playlistName;
+    }
+    if (currentTrack) {
+        part2 = currentTrack.suffix;
+    }
+
+    return [part0, part1, part2].filter(_ => _).join(' / ');
+};
+
+class MainWindow extends Component {
+    boxStyle = { border: { fg: 'blue' } };
+    borderOptions = { type: 'line' };
+    titleStyle = { bg: 'blue' };
+    render() {
+        const {
+            boxStyle,
+            borderOptions,
+            titleStyle,
+            props: {
+                children,
+                route,
+                parentResource,
+                tasksSummary,
+                currentTrack,
+                message
+            }
+        } = this;
+        return (
+            <element>
+                <box
+                    border={borderOptions}
+                    style={boxStyle}
+                    width=""100%""
+                    height=""100%""
+                >
+                    {children}
+                </box>
+                <Label
+                    style={titleStyle}
+                    top={0}
+                    text={getTitle(
+                        route,
+                        parentResource,
+                        tasksSummary,
+                        currentTrack,
+                        message
+                    )}
+                />
+            </element>
+        );
+    }
+}
+
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(MainWindow);
+","Generate the code for a React component that displays a title bar with the current screen name, playlist name, and download status. The title bar should also display the current track suffix if one is playing. If there is an active flash message, it should be displayed instead. The component should be connected to the Redux store to access the necessary state."
+"import React from 'react';
+import {Tooltip} from 'wix-style-react';
+
+import styles from './Example.scss';
+
+export default () =>
+  <div>
+    <Tooltip active placement=""right"" alignment=""center"" content=""Dark Theme"" showTrigger=""custom"" hideTrigger=""custom"" theme=""dark"">
+      <div className={styles.box}>Dark Theme</div>
+    </Tooltip>
+    <br/>
+    <Tooltip active placement=""right"" alignment=""center"" content=""Error Theme"" showTrigger=""custom"" hideTrigger=""custom"" theme=""error"">
+      <div className={styles.box}>Error Theme</div>
+    </Tooltip>
+  </div>;
+","Create a code snippet in React that includes a tooltip component with custom show and hide triggers, alignment, and styling."
+"import React from 'react';
+
+import SPELLS from 'common/SPELLS';
+import SpellLink from 'common/SpellLink';
+import Wrapper from 'common/Wrapper';
+
+import Analyzer from 'Parser/Core/Analyzer';
+
+const debug = false;
+
+class EssenceFont extends Analyzer {
+  castEF = 0;
+  targetsEF = 0;
+
+  on_byPlayer_cast(event) {
+    const spellId = event.ability.guid;
+
+    if (spellId === SPELLS.ESSENCE_FONT.id) {
+      this.castEF += 1;
+    }
+  }
+
+  on_byPlayer_applybuff(event) {
+    const spellId = event.ability.guid;
+
+    if (spellId === SPELLS.ESSENCE_FONT_BUFF.id) {
+      this.targetsEF += 1;
+    }
+  }
+
+  on_byPlayer_refreshbuff(event) {
+    const spellId = event.ability.guid;
+
+    if (spellId === SPELLS.ESSENCE_FONT_BUFF.id) {
+      this.targetsEF += 1;
+    }
+  }
+
+  on_finished() {
+    if (debug) {
+      console.log(`EF Casts: ${this.castEF}`);
+      console.log(`EF Targets Hit: ${this.targetsEF}`);
+      console.log(`EF Avg Targets Hit per Cast: ${this.targetsEF / this.castEF}`);
+    }
+  }
+
+  get avgTargetsHitPerEF() {
+    return (this.targetsEF / this.castEF) || 0;
+  }
+
+  get suggestionThresholds() {
+    return {
+      actual: this.avgTargetsHitPerEF,
+      isLessThan: {
+        minor: 17,
+        average: 14,
+        major: 12,
+      },
+      style: 'number',
+    };
+  }
+
+  suggestions(when) {
+    when(this.suggestionThresholds).addSuggestion((suggest, actual, recommended) => {
+        return suggest(
+          <Wrapper>
+            You are currently using not utilizing your <SpellLink id={SPELLS.ESSENCE_FONT.id} /> effectively. Each <SpellLink id={SPELLS.ESSENCE_FONT.id} /> cast should hit a total of 18 targets. Either hold the cast til 6 or more targets are injured or move while casting to increase the effective range of the spell.
+          </Wrapper>
+        )
+          .icon(SPELLS.ESSENCE_FONT.icon)
+          .actual(`${this.avgTargetsHitPerEF.toFixed(2)} average targets hit per cast`)
+          .recommended(`${recommended} targets hit is recommended`);
+      });
+  }
+}
+
+export default EssenceFont;
+",Describe a class that improves a player's use of a specific spell by tracking its usage and providing suggestions for improvement.
+"/**
+ * Created by dom on 9/15/16.
+ */
+
+import React from 'react';
+import { Link } from 'react-router';
+
+const NavigationTree = React.createClass({
+  propTypes: {
+    items: React.PropTypes.array.isRequired
+  },
+  render() {
+    const flatten = (item) => {
+      return (
+        <li key={item.name}>
+          <Link to={item.url} activeClassName=""selected"">{item.name}</Link>
+        </li>
+      );
+    };
+    return (
+      <ul className=""nav nav-pills"">
+        {this.props.items.map(flatten)}
+      </ul>
+    );
+  }
+});
+
+export default NavigationTree;
+","Prompt: Create a React component that will render an unordered list of links based on the array of items passed in as props. The links should be styled as pills and the currently active link should be highlighted with the class ""selected""."
+"import React from 'react'
+import R from 'ramda'
+
+import { connect } from 'react-redux'
+
+// todo: refactoring
+
+const notNum = node => !R.defaultTo(false)(parseInt(node))
+
+
+export const arrayFromString = s =>
+  R.filter(R.identity,
+    R.replace(/\]/g, '',
+      R.replace(/\[/g, '.', s)
+    ).split('.')
+  )
+
+const normalizeLensPath = lp => (typeof lp === 'string') ? arrayFromString(lp) : lp
+
+
+export const asyncLensFamily = url => lensPathPrefix => lensPaths => ([])
+
+
+
+export const lensFamily = lensPathPrefix => lensPaths =>
+  lensPaths.map(lp => R.concat(normalizeLensPath(lensPathPrefix), normalizeLensPath(lp)))
+
+
+const prettyPath = path => {
+  const withNums = path.map(
+    pathNode => {
+      return notNum(pathNode) ? pathNode : `[${parseInt(pathNode)}]`
+    }
+  )
+  .join('.')
+
+  const withFixedLeftBrackets = R.replace(/\.\[/g, '[', withNums)
+  const withFixedRightBrackets = R.replace(/\]\.\[/g, ']', withFixedLeftBrackets)
+
+  return withFixedRightBrackets
+}
+
+
+const normalizedName = path => {
+  if (notNum(path[path.length - 1])) {
+    return path[path.length - 1]
+  }
+
+  const noNumPath = path.filter(node => notNum(node))
+  return noNumPath[noNumPath.length - 1]
+}
+
+
+//todo: rename me
+const mapLenses = (lensPaths, state) =>{
+  const mappedLensPath = lensPaths.map(lensPath => {
+      const lens = R.lensPath(lensPath)
+      const view = R.view(lens, state)
+      const path = normalizeLensPath(lensPath)
+      return { [`${normalizedName(path)}`]: view }
+  })
+  return R.mergeAll(mappedLensPath)
+}
+
+
+export const viewLensFamilies = lensFamilies => (state, ownProps) =>
+  R.mergeAll(lensFamilies.map(family => mapLenses(family, state)))
+
+
+export const viewLenses = lensPaths => (state, ownProps) =>
+  mapLenses(lensPaths, state)
+
+
+export const lensAction = (lensPath, newVal) => ({
+  type: `LENS-UPDATE: ${prettyPath(lensPath)}`,
+  lensPath,
+  newVal,
+})
+
+
+const capitalize = node =>
+  node.substr(0, 1).toUpperCase() + node.substr(1)
+
+
+export const lensRequest = dispatch => ({ path, url, method='GET', body={} }) => {
+  const lensPath = normalizeLensPath(path)
+  const requestFunc = async (getState) => {
+    dispatch({
+      type: `LENS-REQUEST-STARTED: ${prettyPath(lensPath)}`,
+      lensPath,
+      url,
+      newVal: { loading: true, finished: false },
+    })
+
+
+    try {
+      const response = await fetch(url, { method, body })
+      const json = await response.json()
+      dispatch({ type: `LENS-REQUEST-RECEIVED: ${prettyPath(lensPath)}`, lensPath, newVal: { loading: false, finished: true, value: json } })
+    } catch (e) {
+      dispatch({ type: `LENS-REQUEST-RECEIVED: ${prettyPath(lensPath)}`, lensPath, newVal: { loading: false, finished: true, error: e.message } })
+    }
+  }
+
+  const name = capitalize(normalizedName(normalizeLensPath(lensPath)))
+
+  return ({
+    [`request${name}`]: requestFunc
+  })
+
+}
+
+
+
+export const lensReducer = (reducer=R.identity) => (state = {}, action) => {
+
+  const lens = R.lensPath(action.lensPath)
+
+  if (action.type.startsWith('LENS-UPDATE')           ||
+      action.type.startsWith('LENS-REQUEST-RECEIVED') ||
+      action.type.startsWith('LENS-REQUEST-STARTED')) {
+
+    return R.set(lens, action.newVal, state)
+  }
+
+  return reducer(state)
+}
+
+
+const dispatchFromLens = dispatch => lensPath => ({
+  [`set${capitalize(normalizedName(lensPath))}`]: (value) => dispatch(lensAction(lensPath, value)),
+})
+
+
+// todo: refactor me, sheesh
+const generateLensDispatches = (lensFamilies, dispatch) => {
+  const dispatches =
+    R.mergeAll(
+      lensFamilies.map(fam =>
+        R.mergeAll( fam.map(dispatchFromLens(dispatch)) ))
+    )
+  return dispatches
+}
+
+
+const mergeProps = (stateProps, dispatchProps, ownProps) => {
+  return { ...stateProps, ...dispatchProps, ...ownProps }
+}
+
+
+const dispatchWrapper = (mapDispatchToProps, lensFamilies, dataSources) => (dispatch, props) => {
+  const dispatchProps = typeof mapDispatchToProps === 'function' ? mapDispatchToProps(dispatch, props) : mapDispatchToProps;
+  const lensDispatchProps = generateLensDispatches(lensFamilies, dispatch)
+  const asyncDispatchProps = R.mergeAll(dataSources.map(lensRequest(dispatch)))
+  return { ...dispatchProps, ...lensDispatchProps, ...asyncDispatchProps }
+}
+
+const mapStateWrapper = (mapStateToProps, lensFamilies) => (state, props) => {
+  const stateProps = typeof mapDispatchToProps === 'function' ? mapStateToProps(state, props) : mapStateToProps;
+  const lensStateProps = viewLensFamilies(lensFamilies)(state, props)
+  return { ...stateProps, ...lensStateProps }
+}
+
+
+const lookingGlass = (lensFamilies, dataSources=[]) => (mapStateToProps, mapDispatchToProps) => Comp => ({ ...rest }) => {
+  const dispatchProps = dispatchWrapper(mapDispatchToProps, lensFamilies, dataSources)
+  const stateProps = mapStateWrapper(mapStateToProps, lensFamilies)
+  const ComponentWithLenses = connect(stateProps, dispatchProps, mergeProps)(Comp)
+  return <ComponentWithLenses {...rest} />
+}
+
+
+export default lookingGlass
+","Generate the code for a React component that allows for easy management of complex data structures using lenses and asynchronous data fetching. The component should take in a list of lens paths and a data source object, and automatically generate actions for updating the data and request functions for fetching data from the API."
+"import React from 'react';
+import MenuButton from '../../components/MenuButton';
+import ToggleMarkup from '../../helpers/Manipulation/ToggleMarkup';
+import SelectedContent from '../../helpers/SelectedContent';
+
+const ItalicButton = React.createClass({
+  statics: {
+    getName: () => ""italic"",
+    isVisible: (content, selection) => {
+      const selContent = new SelectedContent(selection, content);
+      return !selContent.isHeader();
+    }
+  },
+
+  propTypes: MenuButton.propTypes,
+
+  getDefaultProps() {
+    return {
+      type: ""em"",
+      text: ""Italic"",
+      icon: ""fa-italic""
+    };
+  },
+
+  handlePress() {
+    const guids   = this.props.selection.guids();
+    const offsets = this.props.selection.offsets();
+    const position = this.props.selection.position();
+
+    const result = this._toggleMarkup().execute(guids, offsets, { type: this.props.type });
+
+    return { content: result.content, position: position };
+  },
+
+  _toggleMarkup() {
+    return new ToggleMarkup(this.props.content);
+  },
+
+  render() {
+    return (
+      <MenuButton {...this.props} onPress={this.handlePress} />
+    );
+  }
+});
+
+export default ItalicButton;
+","Craft a JavaScript React class component for an italic button in a text editor. Include the `getName` and `isVisible` static methods for menuItem registration, `getDefaultProps` to set default properties, `handlePress` to trigger the button action, `_toggleMarkup` to create an instance of a markup toggle helper, and the `render` method to render the button's markup."
+"/* eslint-disable import/no-extraneous-dependencies */
+/* eslint import/no-unresolved: [2, { ignore: [foremanReact/*] }] */
+/* eslint-disable import/no-unresolved */
+
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+import { Grid, Row, Col } from 'react-bootstrap';
+import { Button } from 'patternfly-react';
+import { translate as __ } from 'foremanReact/common/I18n';
+import { LoadingState } from '../../move_to_pf/LoadingState';
+import { createEnabledRepoParams, loadEnabledRepos } from '../../redux/actions/RedHatRepositories/enabled';
+import { loadRepositorySets, updateRecommendedRepositorySets } from '../../redux/actions/RedHatRepositories/sets';
+import SearchBar from './components/SearchBar';
+import RecommendedRepositorySetsToggler from './components/RecommendedRepositorySetsToggler';
+import { getSetsComponent, getEnabledComponent } from './helpers';
+import api from '../../services/api';
+
+class RedHatRepositoriesPage extends Component {
+  componentDidMount() {
+    this.loadData();
+  }
+
+  loadData() {
+    this.props.loadEnabledRepos();
+    this.props.loadRepositorySets({ search: { filters: ['rpm'] } });
+  }
+
+  render() {
+    const { enabledRepositories, repositorySets } = this.props;
+    const { repoParams } = createEnabledRepoParams(enabledRepositories);
+
+    return (
+      <Grid id=""redhatRepositoriesPage"" bsClass=""container-fluid"">
+        <h1>{__('Red Hat Repositories')}</h1>
+        <Row className=""toolbar-pf"">
+          <Col sm={12}>
+            <SearchBar />
+          </Col>
+        </Row>
+
+        <Row className=""row-eq-height"">
+          <Col sm={6} className=""available-repositories-container"">
+            <div className=""available-repositories-header"">
+              <h2>{__('Available Repositories')}</h2>
+              <RecommendedRepositorySetsToggler
+                enabled={repositorySets.recommended}
+                onChange={value => this.props.updateRecommendedRepositorySets(value)}
+                className=""recommended-repositories-toggler""
+              />
+            </div>
+            <LoadingState loading={repositorySets.loading} loadingText={__('Loading')}>
+              {getSetsComponent(
+                repositorySets,
+                (pagination) => {
+                  this.props.loadRepositorySets({
+                    ...pagination,
+                    search: repositorySets.search,
+                  });
+                },
+              )}
+            </LoadingState>
+          </Col>
+
+          <Col sm={6} className=""enabled-repositories-container"">
+            <h2>
+              {__('Enabled Repositories')}
+              <Button
+                className=""pull-right""
+                onClick={() => { api.open('/repositories.csv', repoParams); }}
+              >
+                {__('Export as CSV')}
+              </Button>
+            </h2>
+
+            <LoadingState loading={enabledRepositories.loading} loadingText={__('Loading')}>
+              {getEnabledComponent(
+                enabledRepositories,
+                (pagination) => {
+                  this.props.loadEnabledRepos({
+                    ...pagination,
+                    search: enabledRepositories.search,
+                  });
+                },
+              )}
+            </LoadingState>
+          </Col>
+        </Row>
+      </Grid>
+    );
+  }
+}
+
+RedHatRepositoriesPage.propTypes = {
+  loadEnabledRepos: PropTypes.func.isRequired,
+  loadRepositorySets: PropTypes.func.isRequired,
+  updateRecommendedRepositorySets: PropTypes.func.isRequired,
+  enabledRepositories: PropTypes.shape({
+    loading: PropTypes.bool,
+    search: PropTypes.shape({}),
+  }).isRequired,
+  repositorySets: PropTypes.shape({
+    recommended: PropTypes.array,
+    loading: PropTypes.bool,
+    search: PropTypes.shape({}),
+  }).isRequired,
+};
+
+const mapStateToProps = ({
+  katello: {
+    redHatRepositories: { enabled, sets },
+  },
+}) => ({
+  enabledRepositories: enabled,
+  repositorySets: sets,
+});
+
+export default connect(mapStateToProps, {
+  loadEnabledRepos,
+  loadRepositorySets,
+  updateRecommendedRepositorySets,
+})(RedHatRepositoriesPage);
+","Generate a React component for managing Red Hat repositories, including a search bar, recommended repository sets toggler, available repositories list, and enabled repositories list with an option to export as CSV."
+"import React from 'react';
+import autoPrefix from '../utils/autoPrefix';
+import transitions from '../styles/transitions';
+import Paper from '../Paper';
+
+const VIEWBOX_SIZE = 32;
+
+function getStyles(props) {
+  const padding = props.size * 0.1; // same implementation of `this.getPaddingSize()`
+  return {
+    root: {
+      position: 'absolute',
+      zIndex: 2,
+      width: props.size,
+      height: props.size,
+      padding: padding,
+      top: -10000,
+      left: -10000,
+      transform: `translate3d(${10000 + props.left}px, ${10000 + props.top}px, 0)`,
+      opacity: props.status === 'hide' ? 0 : 1,
+      transition: props.status === 'hide' ? transitions.create('all', '.3s', 'ease-out') : 'none',
+    },
+  };
+}
+
+class RefreshIndicator extends React.Component {
+  static propTypes = {
+    /**
+     * Override the theme's color of the indicator while it's status is
+     * ""ready"" and it's percentage is less than 100.
+     */
+    color: React.PropTypes.string,
+
+    /**
+     * The absolute left position of the indicator in pixels.
+     */
+    left: React.PropTypes.number.isRequired,
+
+    /**
+     * Override the theme's color of the indicator while
+     * it's status is ""loading"" or when it's percentage is 100.
+     */
+    loadingColor: React.PropTypes.string,
+
+    /**
+     * The confirmation progress to fetch data. Max value is 100.
+     */
+    percentage: React.PropTypes.number,
+
+    /**
+     * Size in pixels.
+     */
+    size: React.PropTypes.number,
+
+    /**
+     * The display status of the indicator. If the status is
+     * ""ready"", the indicator will display the ready state
+     * arrow. If the status is ""loading"", it will display
+     * the loading progress indicator. If the status is ""hide"",
+     * the indicator will be hidden.
+     */
+    status: React.PropTypes.oneOf(['ready', 'loading', 'hide']),
+
+    /**
+     * Override the inline-styles of the root element.
+     */
+    style: React.PropTypes.object,
+
+    /**
+     * The absolute top position of the indicator in pixels.
+     */
+    top: React.PropTypes.number.isRequired,
+  };
+
+  static defaultProps = {
+    percentage: 0,
+    size: 40,
+    status: 'hide',
+  };
+
+  static contextTypes = {
+    muiTheme: React.PropTypes.object.isRequired,
+  };
+
+  componentDidMount() {
+    this.componentDidUpdate();
+  }
+
+  componentDidUpdate() {
+    this.scalePath(this.refs.path, 0);
+    this.rotateWrapper(this.refs.wrapper);
+  }
+
+  componentWillUnmount() {
+    clearTimeout(this.scalePathTimer);
+    clearTimeout(this.rotateWrapperTimer);
+    clearTimeout(this.rotateWrapperSecondTimer);
+  }
+
+  renderChildren() {
+    const {prepareStyles} = this.context.muiTheme;
+    const paperSize = this.getPaperSize();
+
+    let childrenCmp = null;
+    if (this.props.status !== 'ready') {
+      const circleStyle = this.getCircleStyle(paperSize);
+      childrenCmp = (
+        <div ref=""wrapper"" style={prepareStyles({
+          transition: transitions.create('transform', '20s', null, 'linear'),
+          width: '100%',
+          height: '100%',
+        })}
+        >
+          <svg style={{
+            width: paperSize,
+            height: paperSize,
+          }}
+            viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}
+          >
+            <circle ref=""path""
+              style={prepareStyles(Object.assign(circleStyle.style, {
+                transition: transitions.create('all', '1.5s', null, 'ease-in-out'),
+              }))}
+              {...circleStyle.attr}
+            />
+          </svg>
+        </div>
+      );
+    } else {
+      const circleStyle = this.getCircleStyle(paperSize);
+      const polygonStyle = this.getPolygonStyle(paperSize);
+      childrenCmp = (
+        <svg style={{
+          width: paperSize,
+          height: paperSize,
+        }}
+          viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}
+        >
+          <circle
+            style={prepareStyles(circleStyle.style)}
+            {...circleStyle.attr}
+          >
+          </circle>
+          <polygon
+            style={prepareStyles(polygonStyle.style)}
+            {...polygonStyle.attr}
+          />
+        </svg>
+      );
+    }
+
+    return childrenCmp;
+  }
+
+  getTheme() {
+    return this.context.muiTheme.refreshIndicator;
+  }
+
+  getPaddingSize() {
+    const padding = this.props.size * 0.1;
+    return padding;
+  }
+
+  getPaperSize() {
+    return this.props.size - this.getPaddingSize() * 2;
+  }
+
+  getCircleAttr() {
+    return {
+      radiu: VIEWBOX_SIZE / 2 - 5,
+      originX: VIEWBOX_SIZE / 2,
+      originY: VIEWBOX_SIZE / 2,
+      strokeWidth: 3,
+    };
+  }
+
+  getArcDeg() {
+    const p = this.props.percentage / 100;
+
+    const beginDeg = p * 120;
+    const endDeg = p * 410;
+    return [beginDeg, endDeg];
+  }
+
+  getFactor() {
+    const p = this.props.percentage / 100;
+    const p1 = Math.min(1, p / 0.4);
+
+    return p1;
+  }
+
+  getCircleStyle() {
+    const isLoading = this.props.status === 'loading';
+    const p1 = isLoading ? 1 : this.getFactor();
+    const circle = this.getCircleAttr();
+    const perimeter = Math.PI * 2 * circle.radiu;
+
+    const [beginDeg, endDeg] = this.getArcDeg();
+    const arcLen = (endDeg - beginDeg) * perimeter / 360;
+    const dashOffset = -beginDeg * perimeter / 360;
+
+    const theme = this.getTheme();
+    return {
+      style: {
+        strokeDasharray: `${arcLen}, ${(perimeter - arcLen)}`,
+        strokeDashoffset: dashOffset,
+        stroke: (isLoading || this.props.percentage === 100) ?
+          (this.props.loadingColor || theme.loadingStrokeColor) :
+          (this.props.color || theme.strokeColor),
+        strokeLinecap: 'round',
+        opacity: p1,
+        strokeWidth: circle.strokeWidth * p1,
+        fill: 'none',
+      },
+      attr: {
+        cx: circle.originX,
+        cy: circle.originY,
+        r: circle.radiu,
+      },
+    };
+  }
+
+  getPolygonStyle() {
+    const p1 = this.getFactor();
+    const circle = this.getCircleAttr();
+
+    const triangleCx = circle.originX + circle.radiu;
+    const triangleCy = circle.originY;
+    const dx = (circle.strokeWidth * 7 / 4) * p1;
+    const trianglePath = `${(triangleCx - dx)},${triangleCy} ${(triangleCx + dx)},${
+      triangleCy} ${triangleCx},${(triangleCy + dx)}`;
+
+    const [, endDeg] = this.getArcDeg();
+
+    const theme = this.getTheme();
+    return {
+      style: {
+        fill: this.props.percentage === 100 ?
+          (this.props.loadingColor || theme.loadingStrokeColor) :
+          (this.props.color || theme.strokeColor),
+        transform: `rotate(${endDeg}deg)`,
+        transformOrigin: `${circle.originX}px ${circle.originY}px`,
+        opacity: p1,
+      },
+      attr: {
+        points: trianglePath,
+      },
+    };
+  }
+
+  scalePath(path, step) {
+    if (this.props.status !== 'loading') return;
+
+    const currStep = (step || 0) % 3;
+
+    const circle = this.getCircleAttr();
+    const perimeter = Math.PI * 2 * circle.radiu;
+    const arcLen = perimeter * 0.64;
+
+    let strokeDasharray;
+    let strokeDashoffset;
+    let transitionDuration;
+
+    if (currStep === 0) {
+      strokeDasharray = '1, 200';
+      strokeDashoffset = 0;
+      transitionDuration = '0ms';
+    } else if (currStep === 1) {
+      strokeDasharray = `${arcLen}, 200`;
+      strokeDashoffset = -15;
+      transitionDuration = '750ms';
+    } else {
+      strokeDasharray = `${arcLen}, 200`;
+      strokeDashoffset = -(perimeter - 1);
+      transitionDuration = '850ms';
+    }
+
+    autoPrefix.set(path.style, 'strokeDasharray', strokeDasharray);
+    autoPrefix.set(path.style, 'strokeDashoffset', strokeDashoffset);
+    autoPrefix.set(path.style, 'transitionDuration', transitionDuration);
+
+    this.scalePathTimer = setTimeout(() => this.scalePath(path, currStep + 1), currStep ? 750 : 250);
+  }
+
+  rotateWrapper(wrapper) {
+    if (this.props.status !== 'loading') return;
+
+    autoPrefix.set(wrapper.style, 'transform', null);
+    autoPrefix.set(wrapper.style, 'transform', 'rotate(0deg)');
+    autoPrefix.set(wrapper.style, 'transitionDuration', '0ms');
+
+    this.rotateWrapperSecondTimer = setTimeout(() => {
+      autoPrefix.set(wrapper.style, 'transform', 'rotate(1800deg)');
+      autoPrefix.set(wrapper.style, 'transitionDuration', '10s');
+      autoPrefix.set(wrapper.style, 'transitionTimingFunction', 'linear');
+    }, 50);
+
+    this.rotateWrapperTimer = setTimeout(() => this.rotateWrapper(wrapper), 10050);
+  }
+
+  render() {
+    const {style} = this.props;
+    const styles = getStyles(this.props, this.context);
+
+    return (
+      <Paper
+        circle={true}
+        style={Object.assign(styles.root, style)}
+        ref=""indicatorCt""
+      >
+        {this.renderChildren()}
+      </Paper>
+    );
+  }
+}
+
+export default RefreshIndicator;
+","Generate React code for a loading indicator component that displays a circular progress bar with a checkmark when the progress is complete. The component should have the following properties:
+
+- size: Size of the indicator in pixels.
+- color: Color of the indicator.
+- loadingColor: Color of the indicator when loading.
+- percentage: Percentage of progress completed.
+- status: Status of the indicator (""loading"", ""ready"", or ""hide"").
+- style: Inline styles to override the default styles."
+"import React from 'react';
+import { connect } from 'react-redux';
+import styled from 'styled-components';
+import { logout } from '../actions/';
+import { Button } from '../common';
+
+const StyledLogoutButton = styled(Button)`
+  background-color: ${props => props.theme.primaryColour};
+  color: white;
+  border: 1px solid white;
+  border-radius: 4px;
+  font-size: 20px;
+`;
+
+const LogoutButton = ({ onLogout }) => (
+  <StyledLogoutButton onClick={onLogout}>Logout</StyledLogoutButton>
+);
+
+const mapDispatchToProps = dispatch => ({
+  onLogout: () => dispatch(logout()),
+});
+
+export default connect(() => ({}), mapDispatchToProps)(LogoutButton);
+","Provide a React component that accepts an onLogout function handler and when triggered, it fires the logout function while displaying a Logout button with customizable styling and text."
+"import React from 'react';
+import { storiesOf, action } from '@kadira/storybook';
+import { setComposerStub } from 'react-komposer';
+import Dashboard from '../dashboard.jsx';
+
+storiesOf('users.Dashboard', module)
+  .add('default view', () => {
+    return (
+      <Dashboard />
+    );
+  })
+",Create a React Storybook configuration to test the dashboard component.
+"import React from 'react'
+import classNames from 'classnames'
+import Meta from './Meta'
+import Control from './Control'
+import Clock from './Clock'
+
+function Team(props) {
+  const divClass = classNames({
+    team: true,
+    hide: props.hide,
+  })
+  return (
+    <div className={divClass}>
+      <Meta
+        right={props.right}
+        teamName={props.name}
+        thought={props.thought}
+        hide={props.hideAll}
+      />
+      <Clock timeout={props.timeout} />
+      <Control controlFns={props.controlFns} running={props.running} end={props.end} />
+    </div>
+  )
+}
+
+export default Team
+","Design a React component called `Team` that encapsulates all the different elements for each team, including a clock, control buttons, and a meta section displaying the team name and current thought. The component should have a dynamic style that hides the team when the `hide` prop is set to `true` and hides both the team and all the child components when `hideAll` is set to `true`."
+"import React from 'react';
+// It's important to not define HelloWorld component right in this file
+// because in that case it will do full page reload on change
+import HelloWorld from './HelloWorld.jsx';
+
+React.render(<HelloWorld />, document.getElementById('react-root'));
+","Generate the React code to render a component called HelloWorld in the div element with id react-root, but import the component from a different file."
+"/*! React Starter Kit | MIT License | http://www.reactstarterkit.com/ */
+
+import React, { Component } from 'react';
+import styles from './Header.css';
+import withStyles from '../../decorators/withStyles';
+import Link from '../Link';
+import Navigation from '../Navigation';
+
+@withStyles(styles)
+class Header extends Component {
+
+  render() {
+    return (
+      <div className=""Header"">
+        <div className=""Header-container"">
+          <a className=""Header-brand"" href=""/"" onClick={Link.handleClick}>
+            <img className=""Header-brandImg"" src={require('./logo-small.png')} width=""38"" height=""38"" alt=""React"" />
+            <span className=""Header-brandTxt"">Your Company</span>
+          </a>
+          <Navigation className=""Header-nav"" />
+          <div className=""Header-banner"">
+            <h1 className=""Header-bannerTitle"">React</h1>
+            <p className=""Header-bannerDesc"">Complex web apps made easy</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+}
+
+export default Header;
+","Create a React component called ""Header"" that includes a brand logo, navigation links, and a banner with a title and description. Use CSS styles to format the header."
+"import React from 'react';
+import PropTypes from 'prop-types';
+import styled from 'styled-components';
+
+const Wrapper = styled.div`
+  background-color: #ffffff;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: ${props => props.direction};
+  justify-content: center;
+  align-items: center;
+`;
+
+const Card = ({ children, direction }) => {
+  return (
+    <Wrapper direction={direction}>
+      {children}
+    </Wrapper>
+  );
+};
+
+Card.propTypes = {
+  children: PropTypes.node,
+  direction: PropTypes.oneOf(['column', 'row']),
+};
+
+Card.defaultProps = {
+  direction: 'column',
+};
+
+export default Card;
+",Design a React component that renders a flexible card container with customizable layout and styling. The component should support both vertical and horizontal orientations and allow for the inclusion of arbitrary content. Ensure that the component utilizes CSS styling for visual presentation.
+"import React from 'react';
+import { Link } from 'react-router-dom';
+
+const NotFoundPage = () => {
+  return (
+    <div>
+      <h4>
+        404 Page Not Found
+      </h4>
+      <Link to=""/""> Go back to homepage </Link>
+    </div>
+  );
+};
+
+export default NotFoundPage;
+",Create a React component for a 404 error page that displays a message and a link to go back to the homepage.
+"import React from 'react';
+import { Receipt } from 'poker-helper';
+import { createStructuredSelector } from 'reselect';
+import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+import { Form, Field, SubmissionError, reduxForm } from 'redux-form/immutable';
+
+import { makeSelectAccountData } from '../../containers/AccountProvider/selectors';
+import { getWeb3 } from '../../containers/AccountProvider/utils';
+import NoWeb3Message from '../../containers/Web3Alerts/NoWeb3';
+import UnsupportedNetworkMessage from '../../containers/Web3Alerts/UnsupportedNetwork';
+import SubmitButton from '../../components/SubmitButton';
+import FormGroup from '../../components/Form/FormGroup';
+import { CheckBox } from '../../components/Input';
+import Label from '../../components/Label';
+import H2 from '../../components/H2';
+import A from '../../components/A';
+import { Icon } from '../../containers/Dashboard/styles';
+
+import { accountUnlocked } from '../AccountProvider/actions';
+
+import { ABI_PROXY } from '../../app.config';
+import { waitForTx } from '../../utils/waitForTx';
+import { promisifyWeb3Call } from '../../utils/promisifyWeb3Call';
+import * as accountService from '../../services/account';
+
+const validate = (values) => {
+  const errors = {};
+
+  if (!values.get('accept')) {
+    errors.accept = 'Required';
+  }
+
+  return errors;
+};
+
+/* eslint-disable react/prop-types */
+const renderCheckBox = ({ input, label, type }) => (
+  <FormGroup>
+    <Label>
+      <CheckBox {...input} placeholder={label} type={type} />
+      {label}
+    </Label>
+  </FormGroup>
+);
+/* eslint-enable react/prop-types */
+
+class UpgradeDialog extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      success: false,
+    };
+
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.submitting === false && this.props.submitting === true && !nextProps.invalid) {
+      this.setState({ success: true });
+      this.props.accountUnlocked();
+    }
+  }
+
+  async handleSubmit() {
+    const { account } = this.props;
+    const proxyContract = getWeb3(true).eth.contract(ABI_PROXY).at(account.proxy);
+    const unlockTx = promisifyWeb3Call(proxyContract.unlock);
+
+    try {
+      const unlockRequest = new Receipt().unlockRequest(account.injected).sign(`0x${account.privKey}`);
+      const unlock = await accountService.unlock(unlockRequest);
+      const txHash = await unlockTx(
+        ...Receipt.parseToParams(unlock),
+          { from: account.injected },
+      );
+      await waitForTx(getWeb3(), txHash);
+    } catch (e) {
+      setImmediate(() => this.props.change('accept', false));
+      throw new SubmissionError({ _error: `Error: ${e.message || e}` });
+    }
+  }
+
+  render() {
+    const { success } = this.state;
+    const {
+      invalid,
+      submitting,
+      handleSubmit,
+      onSuccessButtonClick,
+      account,
+    } = this.props;
+
+    return (
+      <div>
+        <H2>
+          Unlock your account &nbsp;
+          <A
+            href=""http://help.acebusters.com/quick-guide-to-acebusters/winning-the-pots/how-to-upgrade-to-a-shark-account""
+            target=""_blank""
+          >
+            <Icon
+              className=""fa fa-info-circle""
+              aria-hidden=""true""
+            />
+          </A>
+        </H2>
+
+        {!account.injected &&
+          <NoWeb3Message />
+        }
+        {account.injected && !account.onSupportedNetwork &&
+          <UnsupportedNetworkMessage />
+        }
+
+        <Form onSubmit={handleSubmit(this.handleSubmit)}>
+          {account.injected && !submitting && !success &&
+            <div>
+              <p>This will unlock your account</p>
+              <Field
+                name=""accept""
+                type=""checkbox""
+                component={renderCheckBox}
+                label=""I understand that it will be my sole responsible to secure my account and balance""
+              />
+            </div>
+          }
+
+          {submitting &&
+            <p>Account unlock tx pending...</p>
+          }
+
+          {success && <p>Account unlocked successful</p>}
+
+          {!success &&
+            <SubmitButton
+              disabled={!account.injected || !account.onSupportedNetwork || invalid}
+              submitting={submitting}
+            >
+              Unlock
+            </SubmitButton>
+          }
+          {success &&
+            <SubmitButton type=""button"" onClick={onSuccessButtonClick}>
+              Ok
+            </SubmitButton>
+          }
+        </Form>
+      </div>
+    );
+  }
+}
+
+UpgradeDialog.propTypes = {
+  account: PropTypes.object,
+  invalid: PropTypes.bool,
+  submitting: PropTypes.bool,
+  handleSubmit: PropTypes.func,
+  accountUnlocked: PropTypes.func,
+  change: PropTypes.func,
+  onSuccessButtonClick: PropTypes.func,
+};
+
+UpgradeDialog.defaultProps = {
+};
+
+const mapStateToProps = createStructuredSelector({
+  account: makeSelectAccountData(),
+});
+
+export default connect(mapStateToProps, { accountUnlocked })(
+  reduxForm({
+    form: 'upgrade',
+    validate,
+  })(UpgradeDialog)
+);
+","Generate a dialog to allow a user to upgrade their account, allowing the user to sign an unlock request, which will unlock their account using a proxy contract. If the request is successful, the user should be notified that their account is now unlocked."
+"import React from 'react';
+import { Tabs, Tab } from '../../components/tabs';
+
+class TabsTest extends React.Component {
+  state = {
+    index: 1,
+    fixedIndex: 1,
+    inverseIndex: 1
+  };
+
+  handleTabChange = (index) => {
+    this.setState({index});
+  };
+
+  handleFixedTabChange = (index) => {
+    this.setState({fixedIndex: index});
+  };
+
+  handleInverseTabChange = (index) => {
+    this.setState({inverseIndex: index});
+  };
+
+  handleActive = () => {
+    console.log('Special one activated');
+  };
+
+  render () {
+    return (
+      <section>
+        <h5>Tabs</h5>
+        <p>This tabs can be disabled or hidden</p>
+        <Tabs disableAnimatedBottomBorder index={this.state.index} onChange={this.handleTabChange}>
+          <Tab label='Primary'><small>Primary content</small></Tab>
+          <Tab label='Secondary' onActive={this.handleActive}><small>Secondary content</small></Tab>
+          <Tab label='Third' disabled><small>Disabled content</small></Tab>
+          <Tab label='Fourth' hidden><small>Fourth content hidden</small></Tab>
+          <Tab label='Fifth'><small>Fifth content</small></Tab>
+        </Tabs>
+        <h5>Fixed Tabs</h5>
+        <p>These tabs fill the given space.</p>
+        <Tabs index={this.state.fixedIndex} onChange={this.handleFixedTabChange} fixed>
+          <Tab label='First'><small>First Content</small></Tab>
+          <Tab label='Second'><small>Second Content</small></Tab>
+          <Tab label='Third'><small>Third Content</small></Tab>
+        </Tabs>
+        <h5>Inverse Tabs</h5>
+        <p>These tabs have an inverted theme.</p>
+        <Tabs index={this.state.inverseIndex} onChange={this.handleInverseTabChange} inverse>
+          <Tab label='First'><small>First Content</small></Tab>
+          <Tab label='Second'><small>Second Content</small></Tab>
+          <Tab label='Third'><small>Third Content</small></Tab>
+          <Tab label='Disabled' disabled><small>Disabled Content</small></Tab>
+        </Tabs>
+        <h5>Inverse Tabs with labels and icons</h5>
+        <Tabs index={this.state.inverseIndex} onChange={this.handleInverseTabChange} inverse>
+          <Tab label='Home' icon='home'><small>First Content</small></Tab>
+          <Tab label='Favorite' icon='favorite'><small>Second Content</small></Tab>
+          <Tab label='Call' icon='call'><small>Third Content</small></Tab>
+        </Tabs>
+        <h5>Inverse Tabs with icons</h5>
+        <Tabs index={this.state.inverseIndex} onChange={this.handleInverseTabChange} inverse>
+          <Tab icon='home'><small>First Content</small></Tab>
+          <Tab icon='favorite'><small>Second Content</small></Tab>
+          <Tab icon='call'><small>Third Content</small></Tab>
+        </Tabs>
+      </section>
+    );
+  }
+}
+
+export default TabsTest;
+","Create a React component with different tabs, including primary, secondary, disabled, and hidden tabs. Also include fixed and inverse tabs with various labels and icons. Handle tab changes and display messages for special events like tab activation."
+"import React from 'react';
+
+class App extends React.Component {
+    render(){
+
+        return (
+                <div>
+                    <h1>SpringBoot ReactJS Start!!</h1>
+                    <h2>SpringBoot ReactJS Start!!</h2>
+                    <h3>SpringBoot ReactJS Start!!</h3>
+                </div>
+        );
+    }
+}
+
+export default App;","Create React code that displays three levels of heading text elements (""h1"", ""h2"", and ""h3"") with the text of ""SpringBoot ReactJS Start!!"" inside each element."
+"import ArticleList from '../ArticleList';
+import React from 'react';
+import agent from '../../agent';
+import { connect } from 'react-redux';
+
+const YourFeedTab = props => {
+  if (props.token) {
+    const clickHandler = ev => {
+      ev.preventDefault();
+      props.onTabClick('feed', agent.Articles.feed());
+    }
+
+    return (
+      <li className=""nav-item"">
+        <a  href=""""
+            className={ props.tab === 'feed' ? 'nav-link active' : 'nav-link' }
+            onClick={clickHandler}>
+          Your Feed
+        </a>
+      </li>
+    );
+  }
+  return null;
+};
+
+const GlobalFeedTab = props => {
+  const clickHandler = ev => {
+    ev.preventDefault();
+    props.onTabClick('all', agent.Articles.all());
+  };
+  return (
+    <li className=""nav-item"">
+      <a
+        href=""""
+        className={ props.tab === 'all' ? 'nav-link active' : 'nav-link' }
+        onClick={clickHandler}>
+        Global Feed
+      </a>
+    </li>
+  );
+};
+
+const TagFilterTab = props => {
+  if (!props.tag) {
+    return null;
+  }
+
+  return (
+    <li className=""nav-item"">
+      <a href="""" className=""nav-link active"">
+        <i className=""ion-pound""></i> {props.tag}
+      </a>
+    </li>
+  );
+};
+
+const mapStateToProps = state => ({
+  ...state.articleList,
+  tags: state.home.tags,
+  token: state.common.token
+});
+
+const mapDispatchToProps = dispatch => ({
+  onTabClick: (tab, payload) => dispatch({ type: 'CHANGE_TAB', tab, payload })
+});
+
+const MainView = props => {
+  return (
+    <div className=""col-md-9"">
+      <div className=""feed-toggle"">
+        <ul className=""nav nav-pills outline-active"">
+
+          <YourFeedTab
+            token={props.token}
+            tab={props.tab}
+            onTabClick={props.onTabClick} />
+
+          <GlobalFeedTab tab={props.tab} onTabClick={props.onTabClick} />
+
+          <TagFilterTab tag={props.tag} />
+
+        </ul>
+      </div>
+
+      <ArticleList
+        articles={props.articles}
+        loading={props.loading}
+        articlesCount={props.articlesCount}
+        currentPage={props.currentPage} />
+    </div>
+  );
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(MainView);
+","Create a React component that displays navigation tabs for an article feed application. The tabs should include ""Your Feed,"" ""Global Feed,"" and a filter for a specific tag. The ""Your Feed"" tab should only be visible if the user is logged in. When a tab is clicked, the application should fetch the appropriate articles and display them in the main view."
+"import React, { Component } from 'react';
+import { Sankey, Tooltip } from 'recharts';
+import _ from 'lodash';
+import DemoSankeyLink from './DemoSankeyLink';
+import DemoSankeyNode from './DemoSankeyNode';
+
+const data0 = {
+  nodes: [
+    { name: 'Agricultural waste' },
+    { name: 'Bio-conversion' },
+    { name: 'Liquid' },
+    { name: 'Losses' },
+    { name: 'Solid' },
+    { name: 'Gas' },
+    { name: 'Biofuel imports' },
+    { name: 'Biomass imports' },
+    { name: 'Coal imports' },
+    { name: 'Coal' },
+    { name: 'Coal reserves' },
+    { name: 'District heating' },
+    { name: 'Industry' },
+    { name: 'Heating and cooling - commercial' },
+    { name: 'Heating and cooling - homes' },
+    { name: 'Electricity grid' },
+    { name: 'Over generation / exports' },
+    { name: 'H2 conversion' },
+    { name: 'Road transport' },
+    { name: 'Agriculture' },
+    { name: 'Rail transport' },
+    { name: 'Lighting & appliances - commercial' },
+    { name: 'Lighting & appliances - homes' },
+    { name: 'Gas imports' },
+    { name: 'Ngas' },
+    { name: 'Gas reserves' },
+    { name: 'Thermal generation' },
+    { name: 'Geothermal' },
+    { name: 'H2' },
+    { name: 'Hydro' },
+    { name: 'International shipping' },
+    { name: 'Domestic aviation' },
+    { name: 'International aviation' },
+    { name: 'National navigation' },
+    { name: 'Marine algae' },
+    { name: 'Nuclear' },
+    { name: 'Oil imports' },
+    { name: 'Oil' },
+    { name: 'Oil reserves' },
+    { name: 'Other waste' },
+    { name: 'Pumped heat' },
+    { name: 'Solar PV' },
+    { name: 'Solar Thermal' },
+    { name: 'Solar' },
+    { name: 'Tidal' },
+    { name: 'UK land based bioenergy' },
+    { name: 'Wave' },
+    { name: 'Wind' },
+  ],
+  links: [
+    { source: 0, target: 1, value: 124.729 },
+    { source: 1, target: 2, value: 0.597 },
+    { source: 1, target: 3, value: 26.862 },
+    { source: 1, target: 4, value: 280.322 },
+    { source: 1, target: 5, value: 81.144 },
+    { source: 6, target: 2, value: 35 },
+    { source: 7, target: 4, value: 35 },
+    { source: 8, target: 9, value: 11.606 },
+    { source: 10, target: 9, value: 63.965 },
+    { source: 9, target: 4, value: 75.571 },
+    { source: 11, target: 12, value: 10.639 },
+    { source: 11, target: 13, value: 22.505 },
+    { source: 11, target: 14, value: 46.184 },
+    { source: 15, target: 16, value: 104.453 },
+    { source: 15, target: 14, value: 113.726 },
+    { source: 15, target: 17, value: 27.14 },
+    { source: 15, target: 12, value: 342.165 },
+    { source: 15, target: 18, value: 37.797 },
+    { source: 15, target: 19, value: 4.412 },
+    { source: 15, target: 13, value: 40.858 },
+    { source: 15, target: 3, value: 56.691 },
+    { source: 15, target: 20, value: 7.863 },
+    { source: 15, target: 21, value: 90.008 },
+    { source: 15, target: 22, value: 93.494 },
+    { source: 23, target: 24, value: 40.719 },
+    { source: 25, target: 24, value: 82.233 },
+    { source: 5, target: 13, value: 0.129 },
+    { source: 5, target: 3, value: 1.401 },
+    { source: 5, target: 26, value: 151.891 },
+    { source: 5, target: 19, value: 2.096 },
+    { source: 5, target: 12, value: 48.58 },
+    { source: 27, target: 15, value: 7.013 },
+    { source: 17, target: 28, value: 20.897 },
+    { source: 17, target: 3, value: 6.242 },
+    { source: 28, target: 18, value: 20.897 },
+    { source: 29, target: 15, value: 6.995 },
+    { source: 2, target: 12, value: 121.066 },
+    { source: 2, target: 30, value: 128.69 },
+    { source: 2, target: 18, value: 135.835 },
+    { source: 2, target: 31, value: 14.458 },
+    { source: 2, target: 32, value: 206.267 },
+    { source: 2, target: 19, value: 3.64 },
+    { source: 2, target: 33, value: 33.218 },
+    { source: 2, target: 20, value: 4.413 },
+    { source: 34, target: 1, value: 4.375 },
+    { source: 24, target: 5, value: 122.952 },
+    { source: 35, target: 26, value: 839.978 },
+    { source: 36, target: 37, value: 504.287 },
+    { source: 38, target: 37, value: 107.703 },
+    { source: 37, target: 2, value: 611.99 },
+    { source: 39, target: 4, value: 56.587 },
+    { source: 39, target: 1, value: 77.81 },
+    { source: 40, target: 14, value: 193.026 },
+    { source: 40, target: 13, value: 70.672 },
+    { source: 41, target: 15, value: 59.901 },
+    { source: 42, target: 14, value: 19.263 },
+    { source: 43, target: 42, value: 19.263 },
+    { source: 43, target: 41, value: 59.901 },
+    { source: 4, target: 19, value: 0.882 },
+    { source: 4, target: 26, value: 400.12 },
+    { source: 4, target: 12, value: 46.477 },
+    { source: 26, target: 15, value: 525.531 },
+    { source: 26, target: 3, value: 787.129 },
+    { source: 26, target: 11, value: 79.329 },
+    { source: 44, target: 15, value: 9.452 },
+    { source: 45, target: 1, value: 182.01 },
+    { source: 46, target: 15, value: 19.013 },
+    { source: 47, target: 15, value: 289.366 },
+  ],
+};
+
+const data1 = {
+  nodes: [
+    { name: 'Visit' },
+    { name: 'Direct-Favourite' },
+    { name: 'Page-Click' },
+    { name: 'Detail-Favourite' },
+    { name: 'Lost' },
+  ],
+  links: [
+    { source: 0, target: 1, value: 3728.3 },
+    { source: 0, target: 2, value: 354170 },
+    { source: 2, target: 3, value: 62429 },
+    { source: 2, target: 4, value: 291741 },
+  ],
+};
+
+function SankeyDemo() {
+  return (
+    <div className=""sankey-charts"">
+      <div>
+        <pre>1. Simple Sankey</pre>
+        <Sankey width={960} height={500} data={data0}>
+          <Tooltip />
+        </Sankey>
+      </div>
+      <br />
+      <div>
+        <pre>2. Customized Sankey.</pre>
+        <Sankey
+          width={960}
+          height={500}
+          data={data0}
+          node={{ fill: '#8a52b6' }}
+          link={{ stroke: '#77c878' }}
+        >
+          {/* <Tooltip /> */}
+        </Sankey>
+      </div>
+      <br />
+      <div>
+        <pre>2. Sankey with gradient color, name and value, and use margin to avoid outer-clip.</pre>
+        <Sankey
+          width={960} height={500}
+          margin={{ top: 20, bottom: 20 }}
+          data={data1}
+          nodeWidth={10} nodePadding={60}
+          linkCurvature={0.61}
+          iterations={64}
+          link={<DemoSankeyLink />}
+          node={<DemoSankeyNode containerWidth={960} />}
+        >
+          <defs>
+            <linearGradient id={'linkGradient'}>
+              <stop offset=""0%"" stopColor=""rgba(0, 136, 254, 0.5)"" />
+              <stop offset=""100%"" stopColor=""rgba(0, 197, 159, 0.3)"" />
+            </linearGradient>
+          </defs>
+        </Sankey>
+      </div>
+    </div>
+  );
+}
+
+export default SankeyDemo;
+","Generate the code for a Sankey diagram that has gradient color, name and value, and use margin to avoid outer-clip."
+"
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import { actions } from 'react-native-navigation-redux-helpers';
+import { Container, Header, Title, Content, Button, Icon, List, ListItem, Text } from 'native-base';
+
+import styles from './styles';
+
+const {
+  replaceAt,
+} = actions;
+
+class NHBasicList extends Component {
+
+  static propTypes = {
+    replaceAt: React.PropTypes.func,
+    navigation: React.PropTypes.shape({
+      key: React.PropTypes.string,
+    }),
+  }
+
+  replaceAt(route) {
+    this.props.replaceAt('basicList', { key: route }, this.props.navigation.key);
+  }
+
+  render() {
+    return (
+      <Container style={styles.container}>
+        <Header>
+          <Button transparent onPress={() => this.replaceAt('list')}>
+            <Icon name=""ios-arrow-back"" />
+          </Button>
+
+          <Title>Basic List</Title>
+        </Header>
+
+        <Content>
+          <List>
+            <ListItem >
+              <Text>Simon Mignolet</Text>
+            </ListItem>
+            <ListItem>
+              <Text>Nathaniel Clyne</Text>
+            </ListItem>
+            <ListItem>
+              <Text>Dejan Lovren</Text>
+            </ListItem>
+            <ListItem>
+              <Text>Mama Sakho</Text>
+            </ListItem>
+            <ListItem>
+              <Text>Alberto Moreno</Text>
+            </ListItem>
+            <ListItem>
+              <Text>Emre Can</Text>
+            </ListItem>
+            <ListItem>
+              <Text>Joe Allen</Text>
+            </ListItem>
+            <ListItem>
+              <Text>Phil Coutinho</Text>
+            </ListItem>
+          </List>
+        </Content>
+      </Container>
+    );
+  }
+}
+
+function bindAction(dispatch) {
+  return {
+    replaceAt: (routeKey, route, key) => dispatch(replaceAt(routeKey, route, key)),
+  };
+}
+
+const mapStateToProps = state => ({
+  navigation: state.cardNavigation,
+});
+
+export default connect(mapStateToProps, bindAction)(NHBasicList);
+",Generate React Native code for a screen that displays a list of elements. The first button should take the user to a previous screen.
+"import React from 'react';
+import SPELLS from 'common/SPELLS';
+import SPECS from 'game/SPECS';
+import SpellLink from 'common/SpellLink';
+import { formatNumber, formatPercentage } from 'common/format';
+import TalentStatisticBox, { STATISTIC_ORDER } from 'interface/others/TalentStatisticBox';
+import AbilityTracker from 'parser/shared/modules/AbilityTracker';
+import Analyzer from 'parser/core/Analyzer';
+import calculateEffectiveDamage from 'parser/core/calculateEffectiveDamage';
+import Events from 'parser/core/Events';
+import { SELECTED_PLAYER } from 'parser/core/EventFilter';
+import SUGGESTION_IMPORTANCE from 'parser/core/ISSUE_IMPORTANCE';
+
+/*
+ * If Rune of Power is substantially better than the rest of the row, enable
+ * ROP talent suggestion. At time of writing, it's a substantial increase over
+ * incanters flow for fire and arcane in all situations.
+ */
+const SUGGEST_ROP = { [SPECS.FROST_MAGE.id]: false, [SPECS.ARCANE_MAGE.id]: true, [SPECS.FIRE_MAGE.id]: true };
+
+const DAMAGE_BONUS = 0.4;
+const RUNE_DURATION = 10;
+const INCANTERS_FLOW_EXPECTED_BOOST = 0.12;
+
+// FIXME due to interactions with Ignite, the damage boost number will be underrated for Fire Mages. Still fine for Arcane and Frost.
+class RuneOfPower extends Analyzer {
+  static dependencies = {
+    abilityTracker: AbilityTracker,
+  };
+
+  hasROP = false;
+  damage = 0;
+
+  constructor(...args) {
+    super(...args);
+
+    if (this.selectedCombatant.hasTalent(SPELLS.RUNE_OF_POWER_TALENT.id)) {
+      this.hasROP = true;
+      this.addEventListener(Events.damage.by(SELECTED_PLAYER), this.onPlayerDamage);
+    }
+  }
+
+  onPlayerDamage(event) {
+    if (this.selectedCombatant.hasBuff(SPELLS.RUNE_OF_POWER_BUFF.id)) {
+      this.damage += calculateEffectiveDamage(event, DAMAGE_BONUS);
+    }
+  }
+
+  get damagePercent() {
+    return this.owner.getPercentageOfTotalDamageDone(this.damage);
+  }
+
+  get damageIncreasePercent() {
+    return this.damagePercent / (1 - this.damagePercent);
+  }
+
+  get uptimeMS() {
+    return this.selectedCombatant.getBuffUptime(SPELLS.RUNE_OF_POWER_BUFF.id);
+  }
+
+  get roundedSecondsPerCast() {
+    return ((this.uptimeMS / this.abilityTracker.getAbility(SPELLS.RUNE_OF_POWER_TALENT.id).casts) / 1000).toFixed(1);
+  }
+
+  get damageSuggestionThresholds() {
+    return {
+      actual: this.damageIncreasePercent,
+      isLessThan: {
+        minor: INCANTERS_FLOW_EXPECTED_BOOST,
+        average: INCANTERS_FLOW_EXPECTED_BOOST,
+        major: INCANTERS_FLOW_EXPECTED_BOOST - 0.03,
+      },
+      style: 'percentage',
+    };
+  }
+
+  get roundedSecondsSuggestionThresholds() {
+    return {
+      actual: this.roundedSecondsPerCast,
+      isLessThan: {
+        minor: RUNE_DURATION,
+        average: RUNE_DURATION - 1,
+        major: RUNE_DURATION - 2,
+      },
+      style: 'number',
+    };
+  }
+
+  showSuggestion = true;
+  suggestions(when) {
+    if (!this.hasROP) {
+      when(SUGGEST_ROP[this.selectedCombatant.specId]).isTrue()
+        .addSuggestion((suggest) => {
+          return suggest(
+            <>
+            It is highly recommended to talent into <SpellLink id={SPELLS.RUNE_OF_POWER_TALENT.id} /> when playing this spec.
+            While it can take some practice to master, when played correctly it outputs substantially more DPS than <SpellLink id={SPELLS.INCANTERS_FLOW_TALENT.id} /> or <SpellLink id={SPELLS.MIRROR_IMAGE_TALENT.id} />.
+            </>)
+            .icon(SPELLS.RUNE_OF_POWER_TALENT.icon)
+            .staticImportance(SUGGESTION_IMPORTANCE.REGULAR);
+        });
+      return;
+    }
+
+    if(!this.showSuggestion) {
+      return;
+    }
+
+    when(this.damageSuggestionThresholds)
+      .addSuggestion((suggest, actual, recommended) => {
+        return suggest(<>Your <SpellLink id={SPELLS.RUNE_OF_POWER_TALENT.id} /> damage boost is below the expected passive gain from <SpellLink id={SPELLS.INCANTERS_FLOW_TALENT.id} />. Either find ways to make better use of the talent, or switch to <SpellLink id={SPELLS.INCANTERS_FLOW_TALENT.id} />.</>)
+          .icon(SPELLS.RUNE_OF_POWER_TALENT.icon)
+          .actual(`${formatPercentage(this.damageIncreasePercent)}% damage increase from Rune of Power`)
+          .recommended(`${formatPercentage(recommended)}% is the passive gain from Incanter's Flow`);
+      });
+
+    if (this.abilityTracker.getAbility(SPELLS.RUNE_OF_POWER_TALENT.id).casts > 0) {
+      when(this.roundedSecondsSuggestionThresholds)
+        .addSuggestion((suggest, actual, recommended) => {
+          return suggest(<>You sometimes aren't standing in your <SpellLink id={SPELLS.RUNE_OF_POWER_TALENT.id} /> for its full duration. Try to only use it when you know you won't have to move for the duration of the effect.</>)
+            .icon(SPELLS.RUNE_OF_POWER_TALENT.icon)
+            .actual(`Average ${this.roundedSecondsPerCast}s standing in each Rune of Power`)
+            .recommended(`the full duration of ${formatNumber(RUNE_DURATION)}s is recommended`);
+        });
+    }
+
+  }
+
+  showStatistic = true;
+  statistic() {
+    if (!this.hasROP || !this.showStatistic) return null;
+
+    return (
+      <TalentStatisticBox
+        talent={SPELLS.RUNE_OF_POWER_TALENT.id}
+        position={STATISTIC_ORDER.CORE(100)}
+        value={`${formatPercentage(this.damagePercent)} %`}
+        label=""Rune of Power damage""
+        tooltip={<>This is the portion of your total damage attributable to Rune of Power's boost. Expressed as an increase vs never using Rune of Power, this is a <strong>{formatPercentage(this.damageIncreasePercent)}% damage increase</strong>. Note that this number does <em>not</em> factor in the opportunity cost of casting Rune of Power instead of another damaging spell.</>}
+      />
+    );
+  }
+
+}
+
+export default RuneOfPower;
+","Create a statistic that shows the portion of total damage attributable to the Rune of Power's boost, expressed as an increase versus never using Rune of Power."
+"import React from 'react';
+
+export default class SparklinesLine extends React.Component {
+
+    static propTypes = {
+        color: React.PropTypes.string,
+        style: React.PropTypes.object
+    };
+
+    static defaultProps = {
+        style: {}
+    };
+
+    render() {
+        const { points, width, height, margin, color, style } = this.props;
+
+        const linePoints = points
+            .map((p) => [p.x, p.y])
+            .reduce((a, b) => a.concat(b));
+        const closePolyPoints = [
+            points[points.length - 1].x, height - margin,
+            margin, height - margin,
+            margin, points[0].y
+        ];
+        const fillPoints = linePoints.concat(closePolyPoints);
+
+        const lineStyle = {
+            stroke: color || style.stroke || 'slategray',
+            strokeWidth: style.strokeWidth || '1',
+            strokeLinejoin: style.strokeLinejoin || 'round',
+            strokeLinecap: style.strokeLinecap || 'round',
+            fill: 'none'
+        };
+        const fillStyle = {
+            stroke: style.stroke || 'none',
+            strokeWidth: '0',
+            fillOpacity: style.fillOpacity || '.1',
+            fill: color || style.fill || 'slategray'
+        };
+
+        return (
+            <g>
+                <polyline points={fillPoints.join(' ')} style={fillStyle} />
+                <polyline points={linePoints.join(' ')} style={lineStyle} />
+            </g>
+        )
+    }
+}
+",Create a React component to display a sparkline line chart. The line should have a color and style that is customizable. The chart should also be able to display a filled area underneath the line.
+"import React from 'react'
+import Helmet from 'react-helmet'
+import Layout from '../components/layout'
+
+import pic11 from '../assets/images/pic11.jpg'
+
+const Generic = (props) => (
+    <Layout>
+        <Helmet>
+            <title>Generic - Forty by HTML5 UP</title>
+            <meta name=""description"" content=""Generic Page"" />
+        </Helmet>
+
+        <div id=""main"" className=""alt"">
+            <section id=""one"">
+                <div className=""inner"">
+                    <header className=""major"">
+                        <h1>Generic</h1>
+                    </header>
+                    <span className=""image main""><img src={pic11} alt="""" /></span>
+                    <p>Donec eget ex magna. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque venenatis dolor imperdiet dolor mattis sagittis. Praesent rutrum sem diam, vitae egestas enim auctor sit amet. Pellentesque leo mauris, consectetur id ipsum sit amet, fergiat. Pellentesque in mi eu massa lacinia malesuada et a elit. Donec urna ex, lacinia in purus ac, pretium pulvinar mauris. Curabitur sapien risus, commodo eget turpis at, elementum convallis elit. Pellentesque enim turpis, hendrerit.</p>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis dapibus rutrum facilisis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Etiam tristique libero eu nibh porttitor fermentum. Nullam venenatis erat id vehicula viverra. Nunc ultrices eros ut ultricies condimentum. Mauris risus lacus, blandit sit amet venenatis non, bibendum vitae dolor. Nunc lorem mauris, fringilla in aliquam at, euismod in lectus. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. In non lorem sit amet elit placerat maximus. Pellentesque aliquam maximus risus, vel sed vehicula.</p>
+                    <p>Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque venenatis dolor imperdiet dolor mattis sagittis. Praesent rutrum sem diam, vitae egestas enim auctor sit amet. Pellentesque leo mauris, consectetur id ipsum sit amet, fersapien risus, commodo eget turpis at, elementum convallis elit. Pellentesque enim turpis, hendrerit tristique lorem ipsum dolor.</p>
+                </div>
+            </section>
+        </div>
+
+    </Layout>
+)
+
+export default Generic","Compose the HTML, CSS, and JavaScript code, along with React components and libraries, to create a static generic page that utilizes images, text, a header with navigation, and overall consistent styling."
+"// @flow
+import React from 'react';
+import Button from '../Button';
+
+type Props = {
+  counterApp: {
+    count: number
+  },
+  increment: CounterAction,
+  decrement: CounterAction
+};
+
+const Counter = (props: Props) =>
+  <div>
+    Counter: {props.counterApp.count} <br />
+    <Button onClick={props.increment} primary> + </Button>
+    <Button onClick={props.decrement}> - </Button>
+  </div>;
+
+export default Counter;
+","Create a description for a React component called ""Counter"" which will display the current count, and provide buttons to increment or decrement the count."
+"import React from 'react';
+import { connect } from 'react-redux';
+import ImmutablePropTypes from 'react-immutable-proptypes';
+import PropTypes from 'prop-types';
+import { defineMessages, injectIntl, FormattedMessage } from 'react-intl';
+import Button from 'flavours/glitch/components/button';
+import StatusContent from 'flavours/glitch/components/status_content';
+import Avatar from 'flavours/glitch/components/avatar';
+import RelativeTimestamp from 'flavours/glitch/components/relative_timestamp';
+import DisplayName from 'flavours/glitch/components/display_name';
+import AttachmentList from 'flavours/glitch/components/attachment_list';
+import Icon from 'flavours/glitch/components/icon';
+import ImmutablePureComponent from 'react-immutable-pure-component';
+import PrivacyDropdown from 'flavours/glitch/features/compose/components/privacy_dropdown';
+import classNames from 'classnames';
+import { changeBoostPrivacy } from 'flavours/glitch/actions/boosts';
+import VisibilityIcon from 'flavours/glitch/components/status_visibility_icon';
+
+const messages = defineMessages({
+  cancel_reblog: { id: 'status.cancel_reblog_private', defaultMessage: 'Unboost' },
+  reblog: { id: 'status.reblog', defaultMessage: 'Boost' },
+});
+
+const mapStateToProps = state => {
+  return {
+    privacy: state.getIn(['boosts', 'new', 'privacy']),
+  };
+};
+
+const mapDispatchToProps = dispatch => {
+  return {
+    onChangeBoostPrivacy(value) {
+      dispatch(changeBoostPrivacy(value));
+    },
+  };
+};
+
+export default @connect(mapStateToProps, mapDispatchToProps)
+@injectIntl
+class BoostModal extends ImmutablePureComponent {
+
+  static contextTypes = {
+    router: PropTypes.object,
+  };
+
+  static propTypes = {
+    status: ImmutablePropTypes.map.isRequired,
+    onReblog: PropTypes.func.isRequired,
+    onClose: PropTypes.func.isRequired,
+    missingMediaDescription: PropTypes.bool,
+    intl: PropTypes.object.isRequired,
+  };
+
+  componentDidMount() {
+    this.button.focus();
+  }
+
+  handleReblog = () => {
+    this.props.onReblog(this.props.status, this.props.privacy);
+    this.props.onClose();
+  }
+
+  handleAccountClick = (e) => {
+    if (e.button === 0) {
+      e.preventDefault();
+      this.props.onClose();
+      let state = {...this.context.router.history.location.state};
+      state.mastodonBackSteps = (state.mastodonBackSteps || 0) + 1;
+      this.context.router.history.push(`/@${this.props.status.getIn(['account', 'acct'])}`, state);
+    }
+  }
+
+  _findContainer = () => {
+    return document.getElementsByClassName('modal-root__container')[0];
+  };
+
+  setRef = (c) => {
+    this.button = c;
+  }
+
+  render () {
+    const { status, missingMediaDescription, privacy, intl } = this.props;
+    const buttonText = status.get('reblogged') ? messages.cancel_reblog : messages.reblog;
+
+    return (
+      <div className='modal-root__modal boost-modal'>
+        <div className='boost-modal__container'>
+          <div className={classNames('status', `status-${status.get('visibility')}`, 'light')}>
+            <div className='boost-modal__status-header'>
+              <div className='boost-modal__status-time'>
+                <a href={status.get('url')} className='status__relative-time' target='_blank' rel='noopener noreferrer'>
+                  <VisibilityIcon visibility={status.get('visibility')} />
+                  <RelativeTimestamp timestamp={status.get('created_at')} /></a>
+              </div>
+
+              <a onClick={this.handleAccountClick} href={status.getIn(['account', 'url'])} className='status__display-name'>
+                <div className='status__avatar'>
+                  <Avatar account={status.get('account')} size={48} />
+                </div>
+
+                <DisplayName account={status.get('account')} />
+              </a>
+            </div>
+
+            <StatusContent status={status} />
+
+            {status.get('media_attachments').size > 0 && (
+              <AttachmentList
+                compact
+                media={status.get('media_attachments')}
+              />
+            )}
+          </div>
+        </div>
+
+        <div className='boost-modal__action-bar'>
+          <div>
+            { missingMediaDescription ?
+                <FormattedMessage id='boost_modal.missing_description' defaultMessage='This toot contains some media without description' />
+              :
+                <FormattedMessage id='boost_modal.combo' defaultMessage='You can press {combo} to skip this next time' values={{ combo: <span>Shift + <Icon id='retweet' /></span> }} />
+            }
+          </div>
+
+          {status.get('visibility') !== 'private' && !status.get('reblogged') && (
+            <PrivacyDropdown
+              noDirect
+              value={privacy}
+              container={this._findContainer}
+              onChange={this.props.onChangeBoostPrivacy}
+            />
+          )}
+          <Button text={intl.formatMessage(buttonText)} onClick={this.handleReblog} ref={this.setRef} />
+        </div>
+      </div>
+    );
+  }
+
+}
+","Generate a React component that displays a modal to confirm a reblog of a status. The modal should include the following:
+- The status to be reblogged, including the author's avatar, name, timestamp, and content.
+- A button to confirm the reblog.
+- A dropdown to select the privacy of the reblog."
+"import React from 'react';
+import PostImageResp from '../components/story/PostImageResp';
+import TwoPostImageResp from '../components/story/TwoPostImageResp';
+import StoryPage from '../components/story/StoryPage';
+import StoryTextBlock from '../components/story/StoryTextBlock';
+import StoryImages from '../components/story/StoryImages';
+import StoryIntro from '../components/story/StoryIntro';
+import FullImageResp from '../components/story/FullImageResp';
+
+const imgDirPath = ""stories/2017-12-15-cretan-sunsets"";
+
+class CretanSunsetsStory extends React.Component {
+
+  constructor() {
+    super();
+  }
+
+  render() {
+    return (
+      <StoryPage logoDirPath={imgDirPath}
+                 logoPrefix=""wide""
+                 logoNumber=""11""
+                 altLogo=""Sunset in Crete""
+                 title=""Cretan Sunsets""
+                 author=""Dan""
+                 location=""Crete, Greece""
+                 tags=""travel, island, Greece"">
+
+        <StoryIntro>
+          We traveled to Crete this summer. The island is like a paradise, it has everything
+          tourists like us want: great beaches, nice mountains, great towns. We were really
+          impressed by the island, but one thing is for sure:
+          <br/><br/>
+          <blockquote>In Crete we&apos;ve seen the best sunsets of our lives!</blockquote>
+          Let&apos;s try to recreate our trip and remember all of our favorite places here.
+        </StoryIntro>
+
+        <StoryTextBlock title=""Chania"">
+          <a href=""https://en.wikipedia.org/wiki/Chania"" trget=""_blank"">Chania</a> is
+          a must visit place. It&apos;s the second largest city in Crete, it has a nice shopping
+          area in the Old Town and a harbor with a Lighthouse. From the pier we were able
+          to watch an amazing sunset.
+        </StoryTextBlock>
+
+        <StoryImages>
+          <PostImageResp dirPath={imgDirPath} number=""01""
+                         alt=""Sunset, Lighthouse in Chania""/>
+          <PostImageResp dirPath={imgDirPath} number=""02""
+                         alt=""Chania Port""/>
+          <PostImageResp dirPath={imgDirPath} number=""03""
+                         alt=""Buildings in Chania""/>
+        </StoryImages>
+        <FullImageResp dirPath={imgDirPath}
+                       prefix=""image""
+                       number=""04""
+                       alt=""Chania Pier and Lighthouse"" />
+        <StoryImages>
+          <TwoPostImageResp dirPath={imgDirPath}
+                         number1=""05""
+                         alt1=""Chania Horse Carrige""
+                         number2=""06""
+                         alt2=""Old Man in Crete"" />
+          <TwoPostImageResp dirPath={imgDirPath}
+                         number1=""07""
+                         alt1=""Cretan Painter""
+                         number2=""08""
+                         alt2=""Cretan Painter"" />
+          <PostImageResp dirPath={imgDirPath} number=""09""
+                         alt=""Watching the Chania sunset""/>
+        </StoryImages>
+        <StoryTextBlock title=""Heraklion"">
+          Heraklion is the largest city in Crete and the administrative capital of the
+          island. The first thing we visited here was the Knossos Palace. Then we
+          headed to the center of the city and had lunch at a nice restaurant
+          near the Koules Fortress, near the seaside. We also liked the Saint Minas Cathedral and
+          the Church of Saint Titus.
+        </StoryTextBlock>
+        <FullImageResp dirPath={imgDirPath}
+                       prefix=""wide""
+                       number=""05""
+                       alt=""Knossos Palace"" />
+        <StoryImages>
+          <TwoPostImageResp dirPath={imgDirPath}
+                         number1=""11""
+                         alt1=""Knossos Palace""
+                         number2=""12""
+                         alt2=""Knossos Palace"" />
+          <PostImageResp dirPath={imgDirPath} number=""13""
+                         alt=""Koules Fortress""/>
+          <TwoPostImageResp dirPath={imgDirPath}
+                            number1=""14""
+                            alt1=""Saint Minas Cathedral, Heraklion""
+                            number2=""15""
+                            alt2=""Church of Saint Titus, Heraklion"" />
+        </StoryImages>
+
+        <StoryTextBlock title=""Rethimno"">
+          Rethimno is one of the smaller but really animated cities. There are lots
+          of really nice sea food restaurants here. In the center there is a fortress.
+          We witnessed an amazing sunset from the fortress.
+        </StoryTextBlock>
+        <FullImageResp dirPath={imgDirPath}
+                       prefix=""wide""
+                       number=""06""
+                       alt=""Rethimno Lighthouse, Crete"" />
+
+        <StoryTextBlock title=""Agia Galini"">
+           Agia Galini is another nice town. It has a nice harbor with lots of
+           ships and a pier. It&apos;s been built on hill which gives an interesting
+           view when photographed from the pier.
+        </StoryTextBlock>
+        <FullImageResp dirPath={imgDirPath}
+                       prefix=""image""
+                       number=""17""
+                       alt=""Agia Galini, Crete"" />
+
+
+        <StoryTextBlock title=""Seitan Limania Beach"">
+          It was really challenging to reach to the Seitan Limania Beach. You have to
+          get down on a rocky way which looks really dangerous. We put some effort into
+          getting there. But it&apos;s totally worth it.
+          The water and sand are amazing and you can see goats doing jumps on the rocks around.
+        </StoryTextBlock>
+        <FullImageResp dirPath={imgDirPath}
+                       prefix=""image""
+                       number=""18""
+                       alt=""Mountains in Crete"" />
+
+        <StoryImages>
+          <PostImageResp dirPath={imgDirPath} number=""19""
+                         alt=""The Road to Seitan Limania Beach""/>
+          <PostImageResp dirPath={imgDirPath} number=""20""
+                         alt=""Seitan Limania Beach, Crete""/>
+          <PostImageResp dirPath={imgDirPath} number=""21""
+                         alt=""Seitan Limania Beach, Crete""/>
+          <PostImageResp dirPath={imgDirPath} number=""22""
+                         alt=""Cretan Goat""/>
+        </StoryImages>
+
+        <StoryTextBlock title=""Matala Beach"">
+          The Matala Beach is really accessible, there is a big parking lot right next to it.
+          I did some snorkeling here and I&apos;ve seen lots of colorful fishes. The view with the
+          yellow rocks is amazing.
+        </StoryTextBlock>
+
+        <FullImageResp dirPath={imgDirPath}
+                       prefix=""image""
+                       number=""23""
+                       alt=""Matala Beach, Crete"" />
+
+        <StoryTextBlock title=""Praveli Beach"">
+          Praveli Beach is special because it has lots of palm trees, directly on the beach.
+          So you can enjoy the shade during the really hot summer days.
+        </StoryTextBlock>
+
+        <StoryImages>
+          <PostImageResp dirPath={imgDirPath} number=""24""
+                         alt=""Preveli Beach, Crete""/>
+        </StoryImages>
+
+        <StoryTextBlock title=""Balos Beach"">
+          The Balos beach is one of the most amazing places I&apos;ve seen! The lagoon
+          has white sand and turquoise water. The contrast is amazing!
+          <br/><br/>
+          Getting to the beach was not easy, we had to go on a rocky way. Another way
+          of getting there is by boat. I still recommend the rocky path, as from the hills
+          there, you get the best view of the lagoon.
+        </StoryTextBlock>
+
+        <StoryImages>
+          <PostImageResp dirPath={imgDirPath} number=""25"" alt=""Rocky Landscape, Crete"" />
+        </StoryImages>
+        <FullImageResp dirPath={imgDirPath}
+                       prefix=""image""
+                       number=""26""
+                       alt=""Balos Beach, Crete"" />
+        <StoryImages>
+          <PostImageResp dirPath={imgDirPath} number=""27"" alt=""Balos Beach, Crete"" />
+        </StoryImages>
+
+        <StoryTextBlock title=""Other Beaches"">
+          Crete has lots of other beaches: small ones, cute one, rocky ones, also
+          private ones.
+        </StoryTextBlock>
+
+        <StoryImages>
+          <PostImageResp dirPath={imgDirPath} number=""28"" alt=""Cretan Beach"" />
+          <PostImageResp dirPath={imgDirPath} number=""29"" alt=""Royal Blue Resort Beach, Crete"" />
+          <PostImageResp dirPath={imgDirPath} number=""30"" alt=""Cretan Beach"" />
+          <PostImageResp dirPath={imgDirPath} number=""31"" alt=""Rocky Cretan Beach"" />
+          <PostImageResp dirPath={imgDirPath} number=""32"" alt=""Cretan Beach and Mountains"" />
+        </StoryImages>
+
+        <StoryTextBlock title=""The Mountains"">
+          Crete is not only about beaches, and urban landscapes: it has amazing
+          hills and mountains as well. The combination and richness of colors is
+          just breathtaking.
+          <br/><br/>
+          <blockquote>
+            Seeing both mountains and sea in the same place makes me think about
+            how paradise can look like!
+          </blockquote>
+        </StoryTextBlock>
+        <FullImageResp dirPath={imgDirPath}
+                       prefix=""image""
+                       number=""33""
+                       alt=""Crete Sea and Mountains"" />
+
+        <StoryImages>
+          <PostImageResp dirPath={imgDirPath} number=""34"" alt=""Mountains in Crete"" />
+          <PostImageResp dirPath={imgDirPath} number=""35"" alt=""Cretan Mountains"" />
+          <PostImageResp dirPath={imgDirPath} number=""36"" alt=""Sunset in Cretan Mountains"" />
+        </StoryImages>
+
+        <StoryTextBlock title=""The Sunsets"">
+          I kept the best for the end. The sunsets! Every evening we watched one
+          and every time it got better! Enjoy!
+        </StoryTextBlock>
+        <FullImageResp dirPath={imgDirPath}
+                       prefix=""image""
+                       number=""37""
+                       alt=""Sunset, Crete"" />
+        <StoryImages>
+          <PostImageResp dirPath={imgDirPath} number=""38"" alt=""Cretan sunset"" />
+          <PostImageResp dirPath={imgDirPath} number=""39"" alt=""Fortezza Castle, Rethimno"" />
+          <PostImageResp dirPath={imgDirPath} number=""40"" alt=""Santa Maria delle Grazie, Milan"" />
+        </StoryImages>
+      </StoryPage>);
+  }
+}
+
+export default CretanSunsetsStory;
+","Generate a React component named `CretanSunsetsStory` that displays a collection of images and text to tell the story of a trip to Crete, Greece. The component should include a title, author, location, and tags. The story should begin with an introduction that outlines the purpose of the trip and sets the stage for the journey. The main body of the story should be divided into sections, each covering a different aspect of the trip, such as specific towns, beaches, or cultural experiences. The component should feature a mix of images and text to provide a visually appealing and engaging experience for the reader."
