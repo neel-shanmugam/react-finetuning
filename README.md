@@ -4,7 +4,6 @@ To run our script that pulls data from HuggingFace and curates it for our React 
 
 Then you may run any of the Python scripts under gemini_data_prompting, which curates CSV files of data in response to directed Gemini prompts. For example:
 
-> cd gemini_data_prompting
 > python3 single_component_prompting.py
 
 Once the data is extracted, you can feed it into the DataIngestion Python notebook to generate the four datasets used for fine-tuning: the Full (Combined) training set of 1100 examples (500 React single components, 100 React two components, 500 OSS-Instruct), the curated React component dataset of 1000 examples, or the adapted OSS-Instruct dataset of 1000 examples. This notebook includes the sampling and pre-processing methods employed to get the training data. 
@@ -17,6 +16,4 @@ The fine-tuning scripts under finetuning/ train the DeepSeek-Coder-Instruct-1.3B
 
 The script to prompt each model on the examples in the evaluation benchmark is under the evaluation/ directory and can be run via `python3 evaluate.py`. This will generate a folder of React Javascript files that correspond to each example from the benchmark. You can copy these files over to the evaluator/src directory to run testing via Jest. 
 
-> cd evaluator
-> npm install
 > npm test
